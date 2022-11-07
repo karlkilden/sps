@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>sps</artifactId>
+        <groupId>com.kildeen</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>pom</packaging>
+    <artifactId>sps-publish</artifactId>
+
+    <modules>
+        <module>sps-publish-bridge</module>
+        <module>sps-publish-core</module>
+        <module>sps-publish-adapter</module>
+        <module>sps-publish-api</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.kildeen</groupId>
+                <artifactId>sps-publish-bridge</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>com.kildeen</groupId>
+                <artifactId>sps-publish-core</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>com.kildeen</groupId>
+                <artifactId>directory-db</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>lang</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
