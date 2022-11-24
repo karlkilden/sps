@@ -4,7 +4,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * A marker annotation. Classes marked with this is the contract level API:s offered by SPS.
+ * Classes annotated with this are the core API of SPS. Interacting with SPS should go through Contracts
  */
 @Retention(RetentionPolicy.SOURCE)
 public @interface Contract {
