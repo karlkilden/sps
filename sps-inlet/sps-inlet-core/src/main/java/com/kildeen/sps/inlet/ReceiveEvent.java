@@ -1,6 +1,7 @@
 package com.kildeen.sps.inlet;
 
 
+import com.kildeen.sps.Receipt;
 import com.kildeen.sps.SpsEvent;
 
 import java.util.Map;
@@ -15,11 +16,11 @@ public class ReceiveEvent {
         this.ackOrNackEvent = ackOrNackEvent;
     }
 
-    void receive(SpsEvent spsEvent) {
+    Receipt receive(SpsEvent spsEvent) {
         Receipt receipt = Receipt.UNKNOWN;
 
         try {
-            receivers.get(spsEvent.id()).receive(spsEvent);
+            receivers.get(spsEvent.type()).receive(spsEvent);
             try {
                 ackOrNackEvent.ack(spsEvent.id());
                 receipt = Receipt.ACK;
@@ -29,6 +30,7 @@ public class ReceiveEvent {
         } catch (Exception e) {
             try {
                 ackOrNackEvent.nack(spsEvent.id());
+                receipt = Receipt.NACK;
             } catch (Exception ex) {
                 receipt = Receipt.NACK_FAILURE;
             }
@@ -40,6 +42,7 @@ public class ReceiveEvent {
                 ackOrNackEvent.retry(spsEvent.id(), receipt);
             }
         }
+        return receipt;
 
     }
 }

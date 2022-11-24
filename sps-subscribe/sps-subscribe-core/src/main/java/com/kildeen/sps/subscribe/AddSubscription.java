@@ -1,6 +1,5 @@
 package com.kildeen.sps.subscribe;
 
-import com.kildeen.sps.AddSubscriberSpsEvent;
 import com.kildeen.sps.SpsEvent;
 
 //TODO: should be called x timeunit, perhaps also a policy on how to handle refresh

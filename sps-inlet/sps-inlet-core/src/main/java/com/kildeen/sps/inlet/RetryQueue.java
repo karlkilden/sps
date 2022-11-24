@@ -1,5 +1,7 @@
 package com.kildeen.sps.inlet;
 
+import com.kildeen.sps.Receipt;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -20,9 +22,6 @@ public class RetryQueue {
                 new AtomicInteger(retry.retries.get())));
     }
 
-    record RetryAckOrNack(String id, Receipt receipt, Instant instant, AtomicInteger retries) {
-    }
-
     public RetryAckOrNack next() {
         RetryAckOrNack peek = queue.peek();
         if (peek == null) {
@@ -38,5 +37,8 @@ public class RetryQueue {
             }
         }
         return null;
+    }
+
+    record RetryAckOrNack(String id, Receipt receipt, Instant instant, AtomicInteger retries) {
     }
 }

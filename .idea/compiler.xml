@@ -19,18 +19,19 @@
         <module name="sps-publish-core" />
         <module name="sps-inlet-core" />
         <module name="sps-test" />
-        <module name="sps-subscribe-adapter" />
         <module name="sps-jackson-bundle" />
         <module name="sps-javalin-bundle" />
-        <module name="sps-persistence-api" />
+        <module name="sps-subscribe-adapter" />
         <module name="sps-unit-test-bundle" />
         <module name="sps-server-bundle" />
         <module name="sps-adapter-bundle" />
-        <module name="sps-publish-adapter" />
+        <module name="sps-standard-libs" />
         <module name="sps-publish-bridge" />
+        <module name="sps-publish-adapter" />
         <module name="sps-subscribe-deployment" />
         <module name="sps-inlet-bridge" />
         <module name="sps-subscribe-core" />
+        <module name="sps-json-jackson" />
         <module name="sps-schemagen-bridge" />
         <module name="sps-lang" />
         <module name="sps-schemagen-core" />
@@ -41,15 +42,20 @@
         <module name="sps-postgres-bundle" />
         <module name="sps-api" />
         <module name="sps-inlet-adapter" />
-        <module name="sps-publish-api" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="publisher (1)" target="17" />
       <module name="solr-bundle" target="17" />
+      <module name="spi-http-client" target="17" />
       <module name="sps-deployment" target="17" />
+      <module name="sps-logging" target="17" />
       <module name="sps-meecrowave" target="17" />
+      <module name="sps-persistence-api" target="17" />
+      <module name="sps-publish-api" target="17" />
       <module name="sps-publish-boundary" target="17" />
+      <module name="sps-spi" target="17" />
+      <module name="sps-spi-httpclient" target="17" />
       <module name="sps-subscribe-api" target="17" />
       <module name="sps-system-test" target="17" />
     </bytecodeTargetLevel>

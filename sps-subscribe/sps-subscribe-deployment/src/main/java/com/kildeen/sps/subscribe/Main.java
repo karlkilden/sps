@@ -1,14 +1,14 @@
 package com.kildeen.sps.subscribe;
 
-import com.kildeen.sps.DataBaseProvider;
 import com.kildeen.sps.SpsEvents;
 import com.kildeen.sps.inlet.Inlet;
 import com.kildeen.sps.inlet.InletDI;
-import com.kildeen.sps.inlet.Receiver;
+import com.kildeen.sps.persistence.DataBaseProvider;
 import io.javalin.Javalin;
 import io.javalin.http.Handler;
 import io.javalin.http.HttpStatus;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,8 +28,11 @@ public class Main {
     private static void run() {
         Javalin app = Javalin.create();
         Subscribe subscribe = SubscribeDI.INSTANCE.inject();
-        SubscriptionReceiver addSchemaReceiver = new SubscriptionReceiver(subscribe);
-        Inlet inlet = InletDI.INSTANCE.inject(Receiver.map(addSchemaReceiver), DataBaseProvider.database());
+        SubscriptionReceiver receiver = new SubscriptionReceiver(subscribe);
+        Inlet inlet = InletDI.newBuilder().withDatabase(DataBaseProvider.database())
+                .withReceivers(List.of(receiver))
+                .build();
+
         AddSubscriptionResource resource = new AddSubscriptionResource(inlet);
 
         app.start(7200);

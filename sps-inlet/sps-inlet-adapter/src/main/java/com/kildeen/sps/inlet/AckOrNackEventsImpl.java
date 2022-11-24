@@ -1,8 +1,7 @@
 package com.kildeen.sps.inlet;
 
-import com.kildeen.embeddeddb.EmbeddedDatabase;
-import com.kildeen.sps.Database;
-import com.kildeen.sps.ReceiptTuple;
+import com.kildeen.sps.Receipt;
+import com.kildeen.sps.persistence.Database;
 
 public class AckOrNackEventsImpl implements AckOrNackEvents {
 
@@ -14,11 +13,11 @@ public class AckOrNackEventsImpl implements AckOrNackEvents {
 
     @Override
     public void ack(String id) {
-        database.ackOrNack(id, ReceiptTuple.ACK);
+        database.ackOrNack(id, Receipt.ACK);
     }
 
     @Override
     public void nack(String id) {
-        database.ackOrNack(id, ReceiptTuple.NACK);
+        database.ackOrNack(id, Receipt.NACK);
     }
 }

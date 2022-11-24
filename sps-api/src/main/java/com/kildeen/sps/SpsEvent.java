@@ -1,13 +1,14 @@
 package com.kildeen.sps;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public interface SpsEvent {
     String type();
 
-    default String id() {
+    String id();
+
+    default String genId() {
         return type() + "_" + UUID.randomUUID() + "_" + System.currentTimeMillis();
     }
 

@@ -1,25 +1,64 @@
 package com.kildeen.sps.inlet;
 
-import com.kildeen.sps.Database;
-import com.kildeen.sps.SpsEvent;
+import com.kildeen.sps.IdWithReceipts;
 import com.kildeen.sps.SpsEvents;
-import org.jdbi.v3.core.Jdbi;
+import com.kildeen.sps.persistence.Database;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public class InletDI implements Inlet {
 
-    public static final InletDI INSTANCE = new InletDI();
-    private ReceiveEvent receiveEvent;
+    private final ReceiveEvent receiveEvent;
 
-    public Inlet inject(Map<String, Receiver> spsReceivers, Database database) {
-        receiveEvent = new ReceiveEvent(spsReceivers,
-                new AckOrNackEvent(new RetryQueue(), new AckOrNackEventsImpl(database)));
-        return this;
+    private InletDI(Builder builder) {
+        receiveEvent = builder.receiveEvent;
+    }
+
+    public static Builder newBuilder() {
+        return new Builder();
     }
 
     @Override
-    public void receive(SpsEvents events) {
-        events.spsEvents().forEach(receiveEvent::receive);
+    public IdWithReceipts receive(SpsEvents events) {
+        List<IdWithReceipts.IdWithReceipt> result = new ArrayList<>();
+        events.spsEvents().forEach(e -> result.add(new IdWithReceipts.IdWithReceipt(e.id(),
+                receiveEvent.receive(e),
+                Instant.now())));
+        return new IdWithReceipts(result);
+    }
+
+    public static final class Builder {
+        private Collection<Receiver> spsReceivers;
+        private Database database;
+        private ReceiveEvent receiveEvent;
+
+        private Builder() {
+        }
+
+        public Builder withDatabase(Database database) {
+            this.database = database;
+            return this;
+        }
+
+        public Builder withReceivers(Collection<Receiver> receivers) {
+            this.spsReceivers = receivers;
+            return this;
+        }
+
+        public InletDI build() {
+            if (database == null) {
+                throw new NullPointerException("No database configured");
+            }
+            Map<String, Receiver> mapped = Receiver.map(spsReceivers);
+            receiveEvent = new ReceiveEvent(mapped,
+                    new AckOrNackEvent(new RetryQueue(), new AckOrNackEventsImpl(database)));
+
+            return new InletDI(this);
+
+        }
     }
 }

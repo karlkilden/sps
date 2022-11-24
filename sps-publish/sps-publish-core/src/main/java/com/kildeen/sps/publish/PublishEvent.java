@@ -7,14 +7,12 @@ import java.util.Collection;
 public class PublishEvent {
 
     Publisher publisher;
-    FetchSubscription fetchSubscription;
 
-    public PublishEvent(Publisher publisher, FetchSubscription fetchSubscription) {
+    public PublishEvent(Publisher publisher) {
         this.publisher = publisher;
-        this.fetchSubscription = fetchSubscription;
     }
 
-    void publish(String type, Collection<SpsEvent> spsEvents) {
-        publisher.publish(fetchSubscription.fetch(type), spsEvents);
+    void publish(String type, Subscriptions subscriptions, Collection<SpsEvent> spsEvents) {
+        publisher.publish(subscriptions, spsEvents);
     }
 }

@@ -1,15 +1,26 @@
 package com.kildeen.sps.schemagen;
 
-import com.kildeen.embeddeddb.EmbeddedDatabase;
-import com.kildeen.sps.SchemaTuple;
+import com.kildeen.sps.Schemas;
+import com.kildeen.sps.persistence.DataBaseProvider;
+import com.kildeen.sps.persistence.Database;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
 
 public class AddSchemasImpl implements AddSchemas {
 
+    static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private final Database database;
+
+    public AddSchemasImpl() {
+        this.database = DataBaseProvider.database();
+    }
+
     @Override
-    public void add(Schema schema) {
-        SchemaTuple schemaTuple = new SchemaTuple(schema.eventType(),
-                schema.description(), schema.keySchema(), schema.tags());
-        EmbeddedDatabase embeddedDatabase = EmbeddedDatabase.get();
-        embeddedDatabase.addSchema(schemaTuple);
+    public void add(Schemas.Schema schema) {
+        LOG.info("Schema add:{}", schema);
+        database.addSchema(schema);
+        LOG.info("Schema state:{}", database.schemas());
     }
 }

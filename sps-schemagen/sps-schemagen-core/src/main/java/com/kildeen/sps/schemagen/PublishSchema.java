@@ -1,8 +1,7 @@
 package com.kildeen.sps.schemagen;
 
+import com.kildeen.sps.Schemas;
 import com.kildeen.sps.SpsEvent;
-
-import java.util.List;
 
 public class PublishSchema {
     private final FetchSchema fetchSchema;
@@ -14,7 +13,7 @@ public class PublishSchema {
     }
 
     public void receive(SpsEvent spsEvent) {
-        List<Schema> fetched = fetchSchema.fetch(spsEvent);
+        Schemas fetched = fetchSchema.fetch(spsEvent);
         publishSchemas.publish(spsEvent, fetched);
     }
 }

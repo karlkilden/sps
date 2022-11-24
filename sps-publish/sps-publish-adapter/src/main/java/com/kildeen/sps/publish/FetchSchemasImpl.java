@@ -1,21 +1,18 @@
 package com.kildeen.sps.publish;
 
-import com.kildeen.embeddeddb.EmbeddedDatabase;
-import com.kildeen.sps.schema.FetchSchemas;
-import com.kildeen.sps.schema.PublishSchemaTuple;
-
-import java.util.List;
+import com.kildeen.sps.Schemas;
+import com.kildeen.sps.persistence.Database;
 
 public class FetchSchemasImpl implements FetchSchemas {
 
-    FetchSchemasImpl() {
+    private final Database database;
+
+    FetchSchemasImpl(Database database) {
+        this.database = database;
     }
 
     @Override
-    public List<PublishSchemaTuple> fetch(List<String> tags) {
-        EmbeddedDatabase db = EmbeddedDatabase.get();
-        return db.schemas().stream()
-                .map(s -> new PublishSchemaTuple(s.eventType(), s.description(), s.keySchema(), s.tags()))
-                .toList();
+    public Schemas.Schema fetch(String eventType) {
+        return database.schema(eventType);
     }
 }

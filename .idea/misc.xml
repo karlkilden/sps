@@ -11,10 +11,15 @@
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/sps-api/spi-http-client/pom.xml" />
         <option value="$PROJECT_DIR$/sps-dependency-bundle/solr-bundle/pom.xml" />
         <option value="$PROJECT_DIR$/sps-deployment/pom.xml" />
         <option value="$PROJECT_DIR$/sps-deployment/sps-meecrowave/pom.xml" />
+        <option value="$PROJECT_DIR$/sps-logging/pom.xml" />
+        <option value="$PROJECT_DIR$/sps-persistence/sps-persistence-api/pom.xml" />
+        <option value="$PROJECT_DIR$/sps-publish/sps-publish-api/pom.xml" />
         <option value="$PROJECT_DIR$/sps-publish/sps-publish-boundary/pom.xml" />
+        <option value="$PROJECT_DIR$/sps-spi/pom.xml" />
         <option value="$PROJECT_DIR$/sps-subscribe/sps-subscribe-api/pom.xml" />
         <option value="$PROJECT_DIR$/sps-system-test/pom.xml" />
       </set>

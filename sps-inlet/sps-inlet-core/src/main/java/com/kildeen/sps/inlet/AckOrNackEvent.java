@@ -1,15 +1,15 @@
 package com.kildeen.sps.inlet;
 
+import com.kildeen.sps.Receipt;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AckOrNackEvent {
+    private static final ScheduledExecutorService RETRY_QUEUE_SCHEDULED_EXECUTOR = Executors.newScheduledThreadPool(1);
     private final RetryQueue retryQueue;
     private final AckOrNackEvents ackOrNackEvents;
-
-    private static final ScheduledExecutorService RETRY_QUEUE_SCHEDULED_EXECUTOR = Executors.newScheduledThreadPool(1);
-
 
     public AckOrNackEvent(RetryQueue retryQueue, AckOrNackEvents ackOrNackEvents) {
         this.retryQueue = retryQueue;

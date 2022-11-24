@@ -1,7 +1,9 @@
 package com.kildeen.sps;
 
 import java.util.List;
-import java.util.Map;
 
 public record SpsEvents(String eventType, List<SpsEvent> spsEvents) {
+    public SpsEvents(BasicSpsEvents events) {
+        this(events.eventType(), events.spsEvents().stream().map(e -> (SpsEvent) e).toList());
+    }
 }

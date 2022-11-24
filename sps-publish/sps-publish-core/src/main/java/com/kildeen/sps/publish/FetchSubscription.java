@@ -8,7 +8,11 @@ public class FetchSubscription {
         this.fetchSubscriptions = fetchSubscriptions;
     }
 
-    public Subscriptions fetch(String id) {
-        return fetchSubscriptions.fetch(id);
+    public Subscriptions fetch(String eventType) {
+        return fetchSubscriptions.fetchSubscriptions(eventType);
+    }
+
+    public String fetchSchemaGenUrl() {
+        return fetchSubscriptions.fetchSubscriptions();
     }
 }

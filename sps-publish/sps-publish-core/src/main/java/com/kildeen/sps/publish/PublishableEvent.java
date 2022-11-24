@@ -2,10 +2,10 @@ package com.kildeen.sps.publish;
 
 import com.kildeen.sps.SpsEvent;
 
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
-public sealed interface PublishableEvent permits EventFork.ForkedEvents.Fork, Publisher.RetryEvent  {
+public sealed interface PublishableEvent permits EventFork.ForkedEvents.Fork, Publisher.RetryEvent {
 
     default int retries() {
         return 0;
@@ -14,4 +14,11 @@ public sealed interface PublishableEvent permits EventFork.ForkedEvents.Fork, Pu
     Subscriptions.Subscription subscription();
 
     List<SpsEvent> forkedEvents();
+
+    Instant createdAt();
+
+    default String id() {
+        return forkedEvents().get(0).id();
+    }
+
 }

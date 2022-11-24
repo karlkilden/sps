@@ -1,6 +1,7 @@
 package com.kildeen.sps.schemagen;
 
 import com.kildeen.sps.SpsEvent;
+import com.kildeen.sps.SpsEventType;
 import com.kildeen.sps.inlet.Receiver;
 
 public class PublishSchemaReceiver implements Receiver {
@@ -18,6 +19,6 @@ public class PublishSchemaReceiver implements Receiver {
 
     @Override
     public String eventType() {
-        return "command-publish-schema01";
+        return SpsEventType.list_schemas_01.toString();
     }
 }

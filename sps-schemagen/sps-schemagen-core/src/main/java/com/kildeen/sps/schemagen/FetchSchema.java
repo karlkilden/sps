@@ -1,8 +1,8 @@
 package com.kildeen.sps.schemagen;
 
+import com.kildeen.sps.Schemas;
 import com.kildeen.sps.SpsEvent;
 
-import java.util.List;
 import java.util.Set;
 
 public class FetchSchema {
@@ -13,12 +13,9 @@ public class FetchSchema {
         this.fetchSchemas = fetchSchemas;
     }
 
-    List<Schema> fetch(SpsEvent event) {
+    Schemas fetch(SpsEvent event) {
         @SuppressWarnings("unchecked") Set<String> tagSet = (Set<String>) event.data().get("tags");
-            List<SchemaGenSchemaTuple> schemas = fetchSchemas.fetch(event.data().get("tags") == null ? Set.of()
-                    : tagSet);
-            return schemas.stream()
-                    .map(Schema::new).toList();
+        return fetchSchemas.fetch(tagSet);
 
     }
 }

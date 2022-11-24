@@ -1,20 +1,24 @@
 package com.kildeen.sps.schemagen;
 
-import com.kildeen.embeddeddb.EmbeddedDatabase;
-import com.kildeen.sps.Database;
-import com.kildeen.sps.SchemaTuple;
-import com.kildeen.sps.schema.PublishSchemaTuple;
+import com.kildeen.sps.Schemas;
+import com.kildeen.sps.persistence.DataBaseProvider;
+import com.kildeen.sps.persistence.Database;
 
-import javax.xml.crypto.Data;
-import java.util.List;
+import java.util.Collections;
 import java.util.Set;
 
 public class FetchSchemasImpl implements FetchSchemas {
+
+    private final Database database;
+
+    public FetchSchemasImpl() {
+        this.database = DataBaseProvider.database();
+    }
+
+
     @Override
-    public List<SchemaGenSchemaTuple> fetch(Set<String> tags) {
-        EmbeddedDatabase db = EmbeddedDatabase.get();
-        return db.schemas().stream()
-                .map(s -> new SchemaGenSchemaTuple(s.eventType(), s.description(), s.keySchema(), s.tags()))
-                .toList();
+    public Schemas fetch(Set<String> tags) {
+        return new Schemas(database.schemas().schemas().stream()
+                .filter(s -> !Collections.disjoint(tags, s.tags())).toList());
     }
 }

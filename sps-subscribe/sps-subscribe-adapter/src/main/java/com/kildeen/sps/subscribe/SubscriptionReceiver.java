@@ -19,6 +19,6 @@ public class SubscriptionReceiver implements Receiver {
 
     @Override
     public String eventType() {
-        return SpsEventType.add_schema_01.toString();
+        return SpsEventType.add_subscriber_01.toString();
     }
 }

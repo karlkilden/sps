@@ -5,14 +5,16 @@ import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class RetryQueue {
+
     ConcurrentLinkedQueue<TimestampedPublishableEvent> queue = new ConcurrentLinkedQueue<>();
 
-    public void save(PublishableEvent event) {
-        TimestampedPublishableEvent stamped = new TimestampedPublishableEvent(event, Instant.now());
+    public boolean save(PublishableEvent event, RetryPolicies.RetryPolicy retryPolicy) {
+        if (queue.stream().anyMatch(e -> e.event.id().equals(event.id()))) {
+            return false;
+        }
+        TimestampedPublishableEvent stamped = new TimestampedPublishableEvent(event, Instant.now(), event.createdAt(), retryPolicy);
         queue.add(stamped);
-    }
-
-    record TimestampedPublishableEvent(PublishableEvent event, Instant instant) {
+        return true;
     }
 
     public PublishableEvent next() {
@@ -20,8 +22,9 @@ public class RetryQueue {
         if (peek == null) {
             return null;
         }
-        Duration res = Duration.between(peek.instant(), Instant.now());
-        if (res.toSeconds() > 5L * peek.event.retries()) {
+        Duration res = Duration.between(peek.saveForRetry, Instant.now());
+
+        if (res.toMillis() > peek.retryPolicy().waitInMs()) {
             TimestampedPublishableEvent poll = queue.poll();
             if (peek == poll) {
                 return poll.event;
@@ -30,5 +33,9 @@ public class RetryQueue {
             }
         }
         return null;
+    }
+
+    record TimestampedPublishableEvent(PublishableEvent event, Instant firstSeen, Instant saveForRetry,
+                                       RetryPolicies.RetryPolicy retryPolicy) {
     }
 }

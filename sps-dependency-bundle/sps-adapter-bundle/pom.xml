@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>dependency-bundle</artifactId>
@@ -11,20 +11,24 @@
 
     <artifactId>sps-adapter-bundle</artifactId>
 
-   <dependencies>
-       <dependency>
-           <groupId>com.kildeen</groupId>
-           <artifactId>sps-inlet-adapter</artifactId>
-           <version>1.0-SNAPSHOT</version>
-       </dependency>
-       <dependency>
-           <groupId>com.kildeen</groupId>
-           <artifactId>sps-postgres-bundle</artifactId>
-       </dependency>
-       <dependency>
-           <groupId>com.kildeen</groupId>
-           <artifactId>sps-embedded-db</artifactId>
-       </dependency>
-   </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-inlet-adapter</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-postgres-bundle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-embedded-db</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>
