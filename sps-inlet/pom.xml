@@ -15,7 +15,6 @@
         <module>sps-inlet-bridge</module>
         <module>sps-inlet-core</module>
         <module>sps-inlet-adapter</module>
-        <module>sps-inlet-api</module>
     </modules>
 
     <dependencyManagement>

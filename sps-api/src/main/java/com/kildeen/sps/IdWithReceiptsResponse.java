@@ -11,7 +11,7 @@ public class IdWithReceiptsResponse {
     public IdWithReceiptsResponse(Receipt allEvents, Set<Receipt> receipts) {
 
         this.code = allEvents == Receipt.ACK ? 204 : 200;
-        this.json =  JsonProvider.json().write(receipts);
+        this.json = JsonProvider.json().write(receipts);
     }
 
     public int code() {

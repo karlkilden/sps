@@ -7,7 +7,14 @@ import java.util.Collection;
 
 @Contract
 public interface Publish {
-    PublishResult publish(String type, Collection<SpsEvent> events);
+
+    /**
+     *
+     * @param events that all share the same type()
+     *               A mix of different types is not allowed
+     * @return the publish result
+     */
+    PublishResult publish(Collection<SpsEvent> events);
 
     enum PublishResult {
         SCHEMA_GEN_PUBLISH, PUBLISH

@@ -102,6 +102,6 @@ public class PublishSchema {
                 return Map.of("json", JsonProvider.json().write(schema));
             }
         };
-        publishEvent.publish(SpsEventType.add_schema_01.toString(), subscriptions, List.of(event));
+        publishEvent.publish(subscriptions, List.of(event));
     }
 }

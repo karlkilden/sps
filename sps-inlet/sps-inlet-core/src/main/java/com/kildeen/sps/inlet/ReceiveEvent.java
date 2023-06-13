@@ -22,14 +22,14 @@ public class ReceiveEvent {
         try {
             receivers.get(spsEvent.type()).receive(spsEvent);
             try {
-                ackOrNackEvent.ack(spsEvent.id());
+                ackOrNackEvent.ack(spsEvent);
                 receipt = Receipt.ACK;
             } catch (Exception e) {
                 receipt = Receipt.ACK_FAILURE;
             }
         } catch (Exception e) {
             try {
-                ackOrNackEvent.nack(spsEvent.id());
+                ackOrNackEvent.nack(spsEvent);
                 receipt = Receipt.NACK;
             } catch (Exception ex) {
                 receipt = Receipt.NACK_FAILURE;

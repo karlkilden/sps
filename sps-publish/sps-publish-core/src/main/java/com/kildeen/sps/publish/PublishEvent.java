@@ -8,11 +8,12 @@ public class PublishEvent {
 
     Publisher publisher;
 
+
     public PublishEvent(Publisher publisher) {
         this.publisher = publisher;
     }
 
-    void publish(String type, Subscriptions subscriptions, Collection<SpsEvent> spsEvents) {
+    void publish(Subscriptions subscriptions, Collection<SpsEvent> spsEvents) {
         publisher.publish(subscriptions, spsEvents);
     }
 }

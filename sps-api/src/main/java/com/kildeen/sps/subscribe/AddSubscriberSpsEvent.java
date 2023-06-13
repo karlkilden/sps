@@ -1,5 +1,6 @@
 package com.kildeen.sps.subscribe;
 
+import com.kildeen.sps.Contract;
 import com.kildeen.sps.SpsEvent;
 import com.kildeen.sps.SpsEventType;
 import com.kildeen.sps.publish.PublishSpsEvent;
@@ -7,6 +8,11 @@ import com.kildeen.sps.publish.PublishSpsEvent;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Use this event to register a new subscription and to refresh and/or reaffirm a subscription
+ * SPS will drop subscribers after a period
+ */
+@Contract
 public final class AddSubscriberSpsEvent implements PublishSpsEvent {
     private final String requestedEventType;
     private final Map<String, String> subSchema;

@@ -4,6 +4,8 @@ package com.kildeen.sps.publish;
 import com.kildeen.sps.persistence.Config;
 import com.kildeen.sps.persistence.Database;
 
+import java.util.Set;
+
 public class FetchSubscriptionsImpl implements FetchSubscriptions {
 
     private final Database database;
@@ -13,9 +15,9 @@ public class FetchSubscriptionsImpl implements FetchSubscriptions {
     }
 
     @Override
-    public Subscriptions fetchSubscriptions(String eventType) {
+    public Subscriptions fetchSubscriptions(Set<String> eventTypes) {
 
-        return database.subscriptions(eventType);
+        return database.subscriptions(eventTypes);
     }
 
     @Override

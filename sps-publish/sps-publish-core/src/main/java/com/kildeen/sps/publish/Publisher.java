@@ -14,7 +14,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +32,7 @@ public class Publisher {
     private final RetryQueue retryQueue;
     private final RetryPolicies retryPolicies;
     private final Database database;
+    private final CircuitBreakerState circuitBreakerState;
 
     public Publisher(Sender sender, RetryQueue retryQueue, RetryPolicies retryPolicies) {
         this.sender = sender;
@@ -46,24 +49,41 @@ public class Publisher {
     private void retryFromQueue() {
         PublishableEvent event = retryQueue.next();
         if (event != null) {
-            retry(event);
+            RetryPolicies.RetryPolicy retryPolicy = retryPolicies.forAttempt(event.retries(), event.deliveryTypes());
+            retry(event, retryPolicy);
         }
     }
 
     int publish(Subscriptions subscriptions, Collection<SpsEvent> events) {
         EventFork eventFork = new EventFork(events, subscriptions.subscriptions());
-        eventFork.fork().forks().forEach(this::sendAsync);
+        Map<String, Set<String>> trippedTypesBySubId = circuitBreakerState.trippedCircuitsForTypes();
+        eventFork.fork().forks().forEach(fork -> {
+            boolean circuitTripped = trippedTypesBySubId.getOrDefault(fork.subscription().subscriber().subId(),
+                    Set.of()).contains(fork.subscription().eventType()))
+            sendAsync(fork, circuitTripped);
+        });
         return 10;
     }
 
-    private void sendAsync(PublishableEvent fork) {
+    private void sendAsync(PublishableEvent fork, boolean circuitTripped) {
+
         try {
-            CompletableFuture<IdWithReceiptsResult> response = sender.send(fork);
-            response.thenAccept(res -> handleResponse(res, fork));
+            if (circuitTripped) {
+                handleRetry(fork, new CompletionException(new IllegalStateException("Circuit tripped")));
+            }
+            else {
+                CompletableFuture<IdWithReceiptsResult> response = sender.send(fork);
+                response.thenAccept(res -> handleResponse(res, fork));
+            }
         } catch (CompletionException e) {
-            LOG.warn("Could not send {}.", fork, e);
-            retry(fork);
+            handleRetry(fork, e);
         }
+    }
+
+    private void handleRetry(PublishableEvent fork, CompletionException e) {
+        LOG.warn("Could not send {}.", fork, e);
+        RetryPolicies.RetryPolicy retryPolicy = retryPolicies.forAttempt(fork.retries(), fork.deliveryTypes());
+        retry(fork, retryPolicy);
     }
 
     private void handleResponse(IdWithReceiptsResult res, PublishableEvent event) {
@@ -77,7 +97,16 @@ public class Publisher {
         if (spsEvents.isEmpty()) {
             return;
         }
-        retry(new RetryEvent(event.subscription(), spsEvents, event.retries(), event.createdAt()));
+        RetryPolicies.RetryPolicy retryPolicy = retryPolicies.forAttempt(event.retries(), event.deliveryTypes());
+        retry(new RetryEvent(event.subscription(),
+                spsEvents,
+                event.retries(),
+                deliveryTypes(retryPolicy.deliveryType()),
+                event.createdAt()), retryPolicy);
+    }
+
+    private List<DeliveryType> deliveryTypes(DeliveryType deliveryType) {
+        return List.of(deliveryType);
     }
 
     private boolean failed(SpsEvent e, IdWithReceiptsResult res) {
@@ -87,8 +116,7 @@ public class Publisher {
 
     }
 
-    private void retry(PublishableEvent event) {
-        RetryPolicies.RetryPolicy retryPolicy = retryPolicies.forAttempt(event.retries());
+    private void retry(PublishableEvent event, RetryPolicies.RetryPolicy retryPolicy) {
 
         if (retryPolicy == null) {
             return;
@@ -111,7 +139,7 @@ public class Publisher {
             Duration aliveDuration = Duration.between(event.createdAt(), Instant.now());
 
             if (aliveDuration.toMillis() > retryPolicy.abandonEventAfterMs()) {
-                event.forkedEvents().forEach(e -> database.ackOrNack(e.id(), Receipt.ABANDONED));
+                event.forkedEvents().forEach(e -> database.ackOrNack(e, Receipt.ABANDONED));
             }
         }
 
@@ -119,19 +147,19 @@ public class Publisher {
             event.subscription().refreshUrl();
         }
 
-        doRetry(event);
+        doRetry(event, retryPolicy.deliveryType());
     }
 
-    private void doRetry(PublishableEvent event) {
+    private void doRetry(PublishableEvent event, DeliveryType deliveryType) {
 
         CompletableFuture.runAsync(() -> {
             RetryEvent retryEvent = new RetryEvent(event.subscription(), event.forkedEvents(),
-                    event.retries() + 1, event.createdAt());
+                    event.retries() + 1, deliveryTypes(deliveryType), event.createdAt());
             sendAsync(retryEvent);
         }, RETRY_EXECUTOR);
     }
 
     record RetryEvent(Subscriptions.Subscription subscription, List<SpsEvent> forkedEvents,
-                      int retries, Instant createdAt) implements PublishableEvent {
+                      int retries, List<DeliveryType> deliveryTypes, Instant createdAt) implements PublishableEvent {
     }
 }

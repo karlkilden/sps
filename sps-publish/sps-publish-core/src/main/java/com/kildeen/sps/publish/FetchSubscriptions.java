@@ -1,7 +1,9 @@
 package com.kildeen.sps.publish;
 
+import java.util.Set;
+
 public interface FetchSubscriptions {
-    Subscriptions fetchSubscriptions(String eventType);
+    Subscriptions fetchSubscriptions(Set<String> eventTypes);
 
     String fetchSubscriptions();
 }

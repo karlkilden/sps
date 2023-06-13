@@ -4,6 +4,7 @@ package com.kildeen.embeddeddb;
 import com.kildeen.sps.IdWithReceipts;
 import com.kildeen.sps.Receipt;
 import com.kildeen.sps.Schemas;
+import com.kildeen.sps.SpsEvent;
 import com.kildeen.sps.persistence.Config;
 import com.kildeen.sps.persistence.Database;
 import com.kildeen.sps.publish.Retry;
@@ -12,12 +13,15 @@ import com.kildeen.sps.publish.Subscriptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -28,6 +32,8 @@ public class EmbeddedDatabase implements Database {
     Queue<Schemas.Schema> schemas = new ConcurrentLinkedQueue<>();
     Queue<IdWithReceipts.IdWithReceipt> idAndReceipts = new ConcurrentLinkedQueue<>();
     Map<Retry, AtomicInteger> retries = new ConcurrentHashMap<>();
+
+    ConcurrentHashMap<String, Set<String>> trippedCircuitsBySubId = new ConcurrentHashMap<>();
 
     public static EmbeddedDatabase get() {
         return INSTANCE;
@@ -59,13 +65,14 @@ public class EmbeddedDatabase implements Database {
     }
 
     @Override
-    public void ackOrNack(String id, Receipt receipt) {
-        idAndReceipts.add(new IdWithReceipts.IdWithReceipt(id, receipt, Instant.now()));
+    public void ackOrNack(SpsEvent event, Receipt receipt) {
+        idAndReceipts.add(new IdWithReceipts.IdWithReceipt(event.id(), event.type(), receipt, Instant.now()));
     }
 
     @Override
-    public Subscriptions subscriptions(String eventType) {
-        return new Subscriptions(new ArrayList<>(subs).stream().filter(s -> s.eventType().equals(eventType)).toList());
+    public Subscriptions subscriptions(Set<String> eventTypes) {
+        return new Subscriptions(new ArrayList<>(subs).stream().filter(s -> eventTypes.contains(s.eventType()))
+                .toList());
     }
 
     @Override
@@ -135,5 +142,23 @@ public class EmbeddedDatabase implements Database {
             Duration d = Duration.between(firstNack.get().instant(), ack.get().instant());
             return d.toMillis();
         }
+    }
+
+    @Override
+    public long nackCountByTypeSince(String eventType, Instant since) {
+        return idAndReceipts.stream()
+                .filter(iwr -> iwr.instant().isAfter(since))
+                .filter(iwr -> iwr.type().equals(eventType))
+                .count();
+    }
+
+    @Override
+    public void tripCircuit(String subId, String eventType) {
+        trippedCircuitsBySubId.computeIfAbsent(subId, s -> new ConcurrentSkipListSet<>()).add(eventType);
+    }
+
+    @Override
+    public void resetCircuit(String subId, String eventType) {
+        trippedCircuitsBySubId.computeIfAbsent(subId, s -> new ConcurrentSkipListSet<>()).remove(eventType);
     }
 }

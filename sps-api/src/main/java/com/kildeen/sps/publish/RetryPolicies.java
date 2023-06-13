@@ -1,7 +1,9 @@
 package com.kildeen.sps.publish;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Comparator.comparing;
 
@@ -11,31 +13,36 @@ public record RetryPolicies(List<RetryPolicy> retryPolicies, List<RetryPolicy> d
             RetryPolicy.newBuilder()
                     .withMaxRetries(4)
                     .withWaitInMs(2000)
-                    .withDeliveryType(RetryPolicy.DeliveryType.DATABASE)
+                    .withDeliveryType(DeliveryType.DATABASE)
                     .build(),
 
             RetryPolicy.newBuilder()
                     .withMaxRetries(9)
                     .withWaitInMs(20000)
-                    .withDeliveryType(RetryPolicy.DeliveryType.DATABASE)
+                    .withDeliveryType(DeliveryType.DATABASE)
                     .build()
     );
 
 
-    public RetryPolicy forAttempt(int attempt) {
-        return firstMatch(retryPolicies, attempt).orElse(defaultPolicy(attempt));
+    public RetryPolicy forAttempt(int attempt, List<DeliveryType> allowedDeliveryTypes) {
+        HashSet<DeliveryType> deliveryTypes = new HashSet<>(allowedDeliveryTypes);
+        return firstMatch(retryPolicies, attempt, deliveryTypes)
+                .orElse(defaultPolicy(attempt, deliveryTypes));
     }
 
-    private Optional<RetryPolicy> firstMatch(List<RetryPolicy> retryPolicies, int attempt) {
+    private Optional<RetryPolicy> firstMatch(List<RetryPolicy> retryPolicies,
+                                             int attempt,
+                                             Set<DeliveryType> allowedDeliveryTypes) {
         return retryPolicies.stream()
+                .filter(retryPolicy -> allowedDeliveryTypes.contains(retryPolicy.deliveryType()))
                 .filter(retryPolicy -> addIfFitsRange(attempt, retryPolicy))
                 .filter(retryPolicy -> attempt < retryPolicy.maxRetries)
                 .min(comparing(policy -> attempt - policy.attemptStartInclusive + policy.attemptEndInclusive));
     }
 
 
-    private RetryPolicy defaultPolicy(int attempt) {
-        return firstMatch(defaultPolicies, attempt)
+    private RetryPolicy defaultPolicy(int attempt, Set<DeliveryType> allowedDeliveryTypes) {
+        return firstMatch(defaultPolicies, attempt, allowedDeliveryTypes)
                 .orElse(null);
 
     }
@@ -111,10 +118,6 @@ public record RetryPolicies(List<RetryPolicy> retryPolicies, List<RetryPolicy> d
             IN_MEMORY, PERSISTENT
         }
 
-        public enum DeliveryType {
-            HTTP, DATABASE
-        }
-
         public static final class Builder {
             private int maxRetries;
             private int attemptStartInclusive;
@@ -176,6 +179,9 @@ public record RetryPolicies(List<RetryPolicy> retryPolicies, List<RetryPolicy> d
                 }
                 if (retention == null) {
                     retention = RetentionType.IN_MEMORY;
+                }
+                if (deliveryType == null) {
+                    deliveryType = DeliveryType.HTTP;
                 }
                 return new RetryPolicy(this);
             }

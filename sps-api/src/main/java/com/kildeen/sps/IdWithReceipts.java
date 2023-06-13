@@ -14,13 +14,12 @@ public record IdWithReceipts(List<IdWithReceipt> idWithReceipts) {
         Receipt allEvents;
         if (receipts.size() == 1) {
             allEvents = receipts.iterator().next();
-        }
-        else {
+        } else {
             allEvents = Receipt.UNKNOWN;
         }
         return new IdWithReceiptsResponse(allEvents, receipts);
     }
 
-    public record IdWithReceipt(String id, Receipt receipt, Instant instant) {
+    public record IdWithReceipt(String id, String type, Receipt receipt, Instant instant) {
     }
 }

@@ -2,7 +2,12 @@ package com.kildeen.sps.persistence;
 
 import com.kildeen.sps.Receipt;
 import com.kildeen.sps.Schemas;
+import com.kildeen.sps.SpsEvent;
 import com.kildeen.sps.publish.Subscriptions;
+
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Set;
 
 public interface Database {
     void addSubscription(Subscriptions.Subscription subscription);
@@ -13,9 +18,9 @@ public interface Database {
 
     void addSchema(Schemas.Schema schemaTuple);
 
-    void ackOrNack(String id, Receipt receipt);
+    void ackOrNack(SpsEvent event, Receipt receipt);
 
-    Subscriptions subscriptions(String eventType);
+    Subscriptions subscriptions(Set<String> eventTypes);
 
     Config fetchConfig();
 
@@ -32,4 +37,10 @@ public interface Database {
     default Boolean isAck(String baseId, String subscriber) {
         return isAck(baseId + "_" + subscriber);
     }
+
+    long nackCountByTypeSince(String eventType, Instant since);
+
+    void tripCircuit(String subId, String eventType);
+
+    void resetCircuit(String subId, String eventType);
 }

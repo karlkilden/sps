@@ -1,6 +1,8 @@
 package com.kildeen.sps.publish;
 
 
+import java.util.Set;
+
 public class FetchSubscription {
     private final FetchSubscriptions fetchSubscriptions;
 
@@ -8,8 +10,8 @@ public class FetchSubscription {
         this.fetchSubscriptions = fetchSubscriptions;
     }
 
-    public Subscriptions fetch(String eventType) {
-        return fetchSubscriptions.fetchSubscriptions(eventType);
+    public Subscriptions fetch(Set<String> eventTypes) {
+        return fetchSubscriptions.fetchSubscriptions(eventTypes);
     }
 
     public String fetchSchemaGenUrl() {

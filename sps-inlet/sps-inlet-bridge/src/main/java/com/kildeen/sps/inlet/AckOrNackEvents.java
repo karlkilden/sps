@@ -1,7 +1,9 @@
 package com.kildeen.sps.inlet;
 
-public interface AckOrNackEvents {
-    void ack(String id);
+import com.kildeen.sps.SpsEvent;
 
-    void nack(String id);
+public interface AckOrNackEvents {
+    void ack(SpsEvent event);
+
+    void nack(SpsEvent event);
 }

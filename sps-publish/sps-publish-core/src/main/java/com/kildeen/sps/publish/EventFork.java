@@ -33,32 +33,18 @@ public class EventFork {
                                     .forEach(key -> forkedData.put(subscription.subSchema().get(key), e.data().get(key)));
                         }
 
-                        return (SpsEvent) new ForkedEvents.Fork.ForkSpsEvent(e.type(),
+                        return (SpsEvent) new ForkedEvents.Fork.ForkSpsEvent(subscription.eventType(),
                                 e.id() + "_" + subscription.subscriber().subId(), forkedData);
 
                     }).toList();
-                    List<SpsEvent> forkedByVersion = new ArrayList<>();
-                    forkedSpsEvents.forEach(e -> {
-                        if (e instanceof PublishSpsEvent advanced) {
-                            if (advanced.types().size() > 1) {
-                                advanced.types().stream().filter(type -> !advanced.type().equals(type))
-                                        .forEach(type -> forkedByVersion.add(new ForkedEvents.Fork.ForkSpsEvent(type,
-                                                advanced.id(),
-                                                advanced.data())));
-                            }
-                        }
-                    });
-
-                    forkedByVersion.addAll(forkedSpsEvents);
-                    ForkedEvents.Fork.ForkSpsEvent event = (ForkedEvents.Fork.ForkSpsEvent) forkedByVersion.get(0);
-                    return new ForkedEvents.Fork(subscription, forkedByVersion, Instant.now());
+                    return new ForkedEvents.Fork(subscription, forkedSpsEvents, subscription.deliveryType(), Instant.now());
 
                 }).collect(Collectors.toList()));
     }
 
     record ForkedEvents(List<PublishableEvent> forks) {
         record Fork(Subscriptions.Subscription subscription,
-                    List<SpsEvent> forkedEvents, Instant createdAt) implements PublishableEvent {
+                    List<SpsEvent> forkedEvents, List<DeliveryType> deliveryTypes, Instant createdAt) implements PublishableEvent {
 
 
             record ForkSpsEvent(String type, String id, Map<String, Object> data) implements SpsEvent {

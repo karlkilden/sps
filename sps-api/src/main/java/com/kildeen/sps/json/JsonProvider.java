@@ -1,7 +1,5 @@
 package com.kildeen.sps.json;
 
-import com.kildeen.sps.persistence.Database;
-
 public class JsonProvider {
     private static Json JSON;
 

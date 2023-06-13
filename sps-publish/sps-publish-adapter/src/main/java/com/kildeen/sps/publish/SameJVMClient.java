@@ -5,6 +5,7 @@ import com.kildeen.sps.IdWithReceiptsResult;
 import com.kildeen.sps.SpsEvents;
 import com.kildeen.sps.json.JsonProvider;
 
+import java.util.EnumSet;
 import java.util.concurrent.CompletableFuture;
 
 public class SameJVMClient implements Client {
@@ -17,5 +18,10 @@ public class SameJVMClient implements Client {
     @Override
     public CompletableFuture<IdWithReceiptsResult> post(Subscriptions.Subscription subscription, SpsEvents spsEvents) {
         return jvmLocalPost.take(subscription, JsonProvider.json().write(spsEvents));
+    }
+
+    @Override
+    public EnumSet<DeliveryType> supports() {
+        return EnumSet.allOf(DeliveryType.class);
     }
 }

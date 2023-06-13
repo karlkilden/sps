@@ -17,6 +17,8 @@ public sealed interface PublishableEvent permits EventFork.ForkedEvents.Fork, Pu
 
     Instant createdAt();
 
+    List<DeliveryType> deliveryTypes();
+
     default String id() {
         return forkedEvents().get(0).id();
     }

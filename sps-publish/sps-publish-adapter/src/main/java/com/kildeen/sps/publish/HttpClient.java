@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -44,6 +45,11 @@ public class HttpClient implements Client {
 
         final Function<HttpResponse<String>, IdWithReceiptsResult> mapResponse = createReceiptsMapper();
         return response.thenApply(mapResponse);
+    }
+
+    @Override
+    public EnumSet<DeliveryType> supports() {
+        return EnumSet.of(DeliveryType.HTTP);
     }
 
     private Function<HttpResponse<String>, IdWithReceiptsResult> createReceiptsMapper() {
