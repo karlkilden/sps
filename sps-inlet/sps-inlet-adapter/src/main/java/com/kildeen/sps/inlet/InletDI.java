@@ -5,7 +5,6 @@ import com.kildeen.sps.IdWithReceipts;
 import com.kildeen.sps.SpsEventType;
 import com.kildeen.sps.SpsEvents;
 import com.kildeen.sps.persistence.Database;
-import com.kildeen.sps.publish.RetryPolicies;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,9 +15,11 @@ import java.util.Map;
 public class InletDI implements Inlet {
 
     private final ReceiveEvent receiveEvent;
+    private final CircuitBreakerExecutor circuitBreakerExecutor;
 
     private InletDI(Builder builder) {
         receiveEvent = builder.receiveEvent;
+        circuitBreakerExecutor = builder.circuitBreakerExecutor;
     }
 
     public static Builder newBuilder() {
@@ -84,6 +85,7 @@ public class InletDI implements Inlet {
             receiveEvent = new ReceiveEvent(mapped,
                     new AckOrNackEvent(new RetryQueue(), new AckOrNackEventsImpl(database)));
 
+            database.takeLeader();
             return new InletDI(this);
 
         }
@@ -91,11 +93,11 @@ public class InletDI implements Inlet {
         private CircuitBreakers.CircuitBreaker findBreaker(Receiver r, CircuitBreakers circuitBreakers) {
 
             if (circuitBreakers == null) {
-                return CircuitBreakers.CircuitBreaker.defaultForType(r.eventType());
+                return CircuitBreakers.DefaultBreaker.defaultForType(r.eventType());
             }
 
             return circuitBreakers.circuitBreakers().stream().filter(breaker -> r.eventType().equals(breaker.type()))
-                    .findFirst().orElse(circuitBreakers.defaultBreaker());
+                    .findFirst().orElse(CircuitBreakers.DefaultBreaker.createDefault(circuitBreakers, r.eventType()));
         }
     }
 }

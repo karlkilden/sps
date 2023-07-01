@@ -23,6 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 public class PublishRetryTest {
+    public static final String INTERNAL_TEST_ID = "esksjapOZ_sps_internal_test_id";
+    public static final String INTERNAL_TEST_ID2 = "esksjapOZ_sps_internal_test_id-2";
+
     static Inlet inlet;
 
     static {
@@ -31,7 +34,9 @@ public class PublishRetryTest {
 
     @BeforeAll
     static void setUp() {
-        inlet = InletDI.newBuilder()
+        inlet = InletDI
+                .newBuilder()
+                .withSubId("test")
                 .withDatabase(DataBaseProvider.configure(EmbeddedDatabase.get()))
                 .withReceivers(List.of(new Receiver() {
                     Map<String, AtomicInteger> failCount = new HashMap<>();
@@ -51,17 +56,19 @@ public class PublishRetryTest {
 
                     @Override
                     public String eventType() {
-                        return "event01";
+                        return INTERNAL_TEST_ID;
                     }
                 }))
                 .build();
 
-        new AddSubscriptionsImpl().add(new Subscription("event01", "resolveUrl", "sub01", Map.of()));
+        new AddSubscriptionsImpl().add(new Subscription(INTERNAL_TEST_ID, "resolveUrl", "sub01", Map.of()));
 
+        //fire all events asap so the tests run faster
         two_retries_using_default_no_given_policy_given();
         two_retries_using_default_no_given_policy_minWait_200ms_given();
         two_retries_using_default_no_given_policy_minWait_200ms_timeout_at_100_given();
         only_uses_retries_for_start_and_end_given();
+        circuit_break_10_fails_given();
     }
 
     private static void two_retries_using_default_no_given_policy_given() {
@@ -72,8 +79,8 @@ public class PublishRetryTest {
                                 .build())))
                 .build();
         BasicSpsEvents.BasicSpsEvent event =
-                new BasicSpsEvents.BasicSpsEvent("event01", "99", Map.of("fail", 2));
-        publish.publish("event01", List.of(event));
+                new BasicSpsEvents.BasicSpsEvent(INTERNAL_TEST_ID, "99", Map.of("fail", 2));
+        publish.publish(List.of(event));
     }
 
     private static void two_retries_using_default_no_given_policy_minWait_200ms_timeout_at_100_given() {
@@ -86,8 +93,8 @@ public class PublishRetryTest {
                                 .build())))
                 .build();
         BasicSpsEvents.BasicSpsEvent event =
-                new BasicSpsEvents.BasicSpsEvent("event01", "299", Map.of("fail", 2));
-        publish.publish("event01", List.of(event));
+                new BasicSpsEvents.BasicSpsEvent(INTERNAL_TEST_ID, "299", Map.of("fail", 2));
+        publish.publish(List.of(event));
     }
 
     private static void two_retries_using_default_no_given_policy_minWait_200ms_given() {
@@ -99,8 +106,8 @@ public class PublishRetryTest {
                                 .build())))
                 .build();
         BasicSpsEvents.BasicSpsEvent event =
-                new BasicSpsEvents.BasicSpsEvent("event01", "199", Map.of("fail", 3));
-        publish.publish("event01", List.of(event));
+                new BasicSpsEvents.BasicSpsEvent(INTERNAL_TEST_ID, "199", Map.of("fail", 3));
+        publish.publish(List.of(event));
     }
 
     private static void only_uses_retries_for_start_and_end_given() {
@@ -116,8 +123,24 @@ public class PublishRetryTest {
                                         .build())))
                 .build();
         BasicSpsEvents.BasicSpsEvent event =
-                new BasicSpsEvents.BasicSpsEvent("event01", "399", Map.of("fail", 3));
-        publish.publish("event01", List.of(event));
+                new BasicSpsEvents.BasicSpsEvent(INTERNAL_TEST_ID, "399", Map.of("fail", 3));
+        publish.publish( List.of(event));
+    }
+
+    private static void circuit_break_10_fails_given() {
+        var publish = baseBuilder()
+                .withRetryPolicies(new RetryPolicies(List.of(),
+                        List.of(RetryPolicies.RetryPolicy.newBuilder()
+                                        .withMaxRetries(0)
+                                        .build())))
+                .build();
+        for (int i = 0; i < 10; i++) {
+            BasicSpsEvents.BasicSpsEvent event =
+                    new BasicSpsEvents.BasicSpsEvent(INTERNAL_TEST_ID, "399"+i, Map.of("fail", 1));
+            System.out.println(event);
+            publish.publish( List.of(event));
+        }
+
     }
 
     static PublishDI.Builder baseBuilder() {
@@ -150,4 +173,11 @@ public class PublishRetryTest {
         assertThat(DataBaseProvider.database().nackCount("399_sub01")).isEqualTo(3);
         assertThat(DataBaseProvider.database().firstNackToAck("399_sub01")).isBetween(200L, 300L);
     }
+
+    @Test()
+    void circuit_breaker() {
+        await().until(() -> DataBaseProvider.database().isNack("3999_sub01"));
+        await().until(() -> !DataBaseProvider.database().trippedCircuits().isEmpty());
+    }
+
 }

@@ -37,6 +37,6 @@ public class PublishSchemasImpl implements PublishSchemas {
                 return Map.of("json", JsonProvider.json().write(schema));
             }
         }).map(e -> (SpsEvent) e).toList();
-        publish.publish(SpsEventType.list_schemas_01.toString(), events);
+        publish.publish(events);
     }
 }

@@ -42,6 +42,7 @@ public class Main {
                 = new PublishSchemaReceiver(new PublishSchema(new FetchSchema(new FetchSchemasImpl()),
                 new PublishSchemasImpl(publish)));
         Inlet inlet = InletDI.newBuilder()
+                .withSubId("sps-schemagen")
                 .withDatabase(DataBaseProvider.database())
                 .withReceivers(List.of(addSchemaReceiver, publishSchemaReceiver))
                 .build();

@@ -7,7 +7,9 @@ import com.kildeen.sps.publish.Subscriptions;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public interface Database {
     void addSubscription(Subscriptions.Subscription subscription);
@@ -26,6 +28,8 @@ public interface Database {
 
     boolean isAck(String id);
 
+    boolean isNack(String id);
+
     boolean isAbandoned(String s);
 
     int nackCount(String id);
@@ -43,4 +47,10 @@ public interface Database {
     void tripCircuit(String subId, String eventType);
 
     void resetCircuit(String subId, String eventType);
+
+    Map<String, Set<String>> trippedCircuits();
+
+    boolean isTripped(String subId, String eventId);
+
+    boolean takeLeader(UUID id);
 }

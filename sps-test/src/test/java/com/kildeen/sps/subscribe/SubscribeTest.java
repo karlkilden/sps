@@ -49,7 +49,10 @@ public class SubscribeTest {
                 return "test01";
             }
         };
-        inlet = InletDI.newBuilder().withDatabase(DataBaseProvider.database())
+        inlet = InletDI
+                .newBuilder()
+                .withSubId("test")
+                .withDatabase(DataBaseProvider.database())
                 .withReceivers(List.of(receiver, WantEvent))
                 .build();
 
@@ -77,7 +80,7 @@ public class SubscribeTest {
                 "turnUrl",
                 "newsub01");
 
-        publish.publish(SpsEventType.add_subscriber_01.toString(), List.of(addSubscriberSpsEvent));
+        publish.publish(List.of(addSubscriberSpsEvent));
         await().until(() ->
                 DataBaseProvider.database().isAck(addSubscriberSpsEvent.id(),
                         SpsSubscriberType.add_subscriber.toString()));
@@ -90,12 +93,12 @@ public class SubscribeTest {
                 "turnUrl",
                 "newsub01");
 
-        publish.publish(SpsEventType.add_subscriber_01.toString(), List.of(addSubscriberSpsEvent));
+        publish.publish(List.of(addSubscriberSpsEvent));
         await().until(() ->
                 DataBaseProvider.database().isAck(addSubscriberSpsEvent.id(),
                         SpsSubscriberType.add_subscriber.toString()));
 
-        publish.publish("test01", List.of(new BasicSpsEvents.BasicSpsEvent("test01", "999",
+        publish.publish(List.of(new BasicSpsEvents.BasicSpsEvent("test01", "999",
                 Map.of("key", "data"))));
 
         await().until(() -> receivedEvent != null);

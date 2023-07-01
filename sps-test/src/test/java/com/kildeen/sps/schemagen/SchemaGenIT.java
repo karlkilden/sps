@@ -20,7 +20,7 @@ public class SchemaGenIT {
     @Test
     void name() {
         Publish publish = PublishDI.newBuilder().withDatabase(DataBaseProvider.database()).build();
-        publish.publish("schemagen_test01", List.of(new SpsEvent() {
+        publish.publish(List.of(new SpsEvent() {
             private String id = genId();
 
             @Override

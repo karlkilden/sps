@@ -3,6 +3,7 @@ package com.kildeen.sps.publish;
 import com.kildeen.sps.Client;
 import com.kildeen.sps.Schemas;
 import com.kildeen.sps.SpsEvent;
+import com.kildeen.sps.SpsEventType;
 import com.kildeen.sps.SpsSubscriberType;
 import com.kildeen.sps.persistence.DataBaseProvider;
 import com.kildeen.sps.persistence.Database;
@@ -50,7 +51,7 @@ public class PublishDI implements Publish {
 
         for (String type : types) {
             Subscriptions schemaGenWrapper =
-                    new Subscriptions(List.of(new Subscriptions.Subscription(schemaGen, type, Map.of())));
+                    new Subscriptions(List.of(new Subscriptions.Subscription(schemaGen, SpsEventType.add_schema_01.toString(), Map.of())));
 
             publishSchema.publish(type, schemaGenWrapper, events);
         }
@@ -107,7 +108,8 @@ public class PublishDI implements Publish {
             if (retryPolicies == null) {
                 retryPolicies = new RetryPolicies(List.of(), RetryPolicies.DEFAULT_RETRY_POLICIES);
             }
-            Publisher publisher = new Publisher(new Sender(clients), new RetryQueue(), retryPolicies);
+            Publisher publisher = new Publisher(new Sender(clients), new RetryQueue(), retryPolicies,
+                    new CircuitBreakerState(database));
             fetchSubscription = new FetchSubscription(new FetchSubscriptionsImpl(database));
             FetchSchema fetchSchema = new FetchSchema(new FetchSchemasImpl(DataBaseProvider.database()));
             publishEvent = new PublishEvent(publisher);

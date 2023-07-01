@@ -14,9 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -34,10 +32,14 @@ public class Publisher {
     private final Database database;
     private final CircuitBreakerState circuitBreakerState;
 
-    public Publisher(Sender sender, RetryQueue retryQueue, RetryPolicies retryPolicies) {
+    public Publisher(Sender sender,
+                     RetryQueue retryQueue,
+                     RetryPolicies retryPolicies,
+                     CircuitBreakerState circuitBreakerState) {
         this.sender = sender;
         this.retryQueue = retryQueue;
         this.retryPolicies = retryPolicies;
+        this.circuitBreakerState = circuitBreakerState;
         RETRY_QUEUE_SCHEDULED_EXECUTOR.scheduleAtFixedRate(this::retryFromQueue,
                 200,
                 2000,
@@ -56,22 +58,16 @@ public class Publisher {
 
     int publish(Subscriptions subscriptions, Collection<SpsEvent> events) {
         EventFork eventFork = new EventFork(events, subscriptions.subscriptions());
-        Map<String, Set<String>> trippedTypesBySubId = circuitBreakerState.trippedCircuitsForTypes();
-        eventFork.fork().forks().forEach(fork -> {
-            boolean circuitTripped = trippedTypesBySubId.getOrDefault(fork.subscription().subscriber().subId(),
-                    Set.of()).contains(fork.subscription().eventType()))
-            sendAsync(fork, circuitTripped);
-        });
+        eventFork.fork().forks().forEach(this::sendAsync);
         return 10;
     }
 
-    private void sendAsync(PublishableEvent fork, boolean circuitTripped) {
+    private void sendAsync(PublishableEvent fork) {
 
         try {
-            if (circuitTripped) {
+            if (circuitBreakerState.isTripped(fork)) {
                 handleRetry(fork, new CompletionException(new IllegalStateException("Circuit tripped")));
-            }
-            else {
+            } else {
                 CompletableFuture<IdWithReceiptsResult> response = sender.send(fork);
                 response.thenAccept(res -> handleResponse(res, fork));
             }

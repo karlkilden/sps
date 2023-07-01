@@ -29,7 +29,10 @@ public class Main {
         Javalin app = Javalin.create();
         Subscribe subscribe = SubscribeDI.INSTANCE.inject();
         SubscriptionReceiver receiver = new SubscriptionReceiver(subscribe);
-        Inlet inlet = InletDI.newBuilder().withDatabase(DataBaseProvider.database())
+        Inlet inlet = InletDI
+                .newBuilder()
+                .withSubId("sps-subscribe")
+                .withDatabase(DataBaseProvider.database())
                 .withReceivers(List.of(receiver))
                 .build();
 

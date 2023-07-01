@@ -30,7 +30,9 @@ public class SchemaGenTest {
 
     @BeforeAll
     static void setUp() {
-        inlet = InletDI.newBuilder()
+        inlet = InletDI
+                .newBuilder()
+                .withSubId("test")
                 .withDatabase(DataBaseProvider.configure(EmbeddedDatabase.get()))
                 .withReceivers(List.of(new AddSchemaReceiver(new AddSchema(new AddSchemasImpl()))))
                 .build();
@@ -46,7 +48,7 @@ public class SchemaGenTest {
 
     @Test
     void generates_schema() {
-        publish.publish("not_existing",
+        publish.publish(
                 List.of(new BasicSpsEvents.BasicSpsEvent(
                         "not_existing", "1", Map.of("key", "value"))));
 
@@ -59,11 +61,11 @@ public class SchemaGenTest {
 
     @Test
     void updates_schema_when_event_has_more_keys() {
-        publish.publish("not_existing_2",
+        publish.publish(
                 List.of(new BasicSpsEvents.BasicSpsEvent(
                         "not_existing_2", "1", Map.of("key", "value"))));
 
-        publish.publish("not_existing_2",
+        publish.publish(
                 List.of(new BasicSpsEvents.BasicSpsEvent(
                         "not_existing_2", "1", Map.of("key", "value", "key2", "value2"))));
 
@@ -78,7 +80,7 @@ public class SchemaGenTest {
                         Map.of("some_field", "some_field_doc"), Set.of(), 1))))
                 .build();
 
-        publish.publish("not_existing_3",
+        publish.publish(
                 List.of(new BasicSpsEvents.BasicSpsEvent(
                         "not_existing_3", "1", Map.of("key", "value", "key2", "value2"))));
 
@@ -95,7 +97,7 @@ public class SchemaGenTest {
                         Map.of("some_field", "some_field_doc"), Set.of(), 1))))
                 .build();
 
-        publish.publish("not_existing_3",
+        publish.publish(
                 List.of(new BasicSpsEvents.BasicSpsEvent(
                         "not_existing_3", "1", Map.of("key", "value", "key2", "value2"))));
 

@@ -13,12 +13,12 @@ import com.kildeen.sps.publish.Subscriptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -84,6 +84,12 @@ public class EmbeddedDatabase implements Database {
     public boolean isAck(String id) {
         return findById(id)
                 .anyMatch(is(Receipt.ACK));
+    }
+
+    @Override
+    public boolean isNack(String id) {
+        return findById(id)
+                .anyMatch(is(Receipt.NACK));
     }
 
     private Predicate<IdWithReceipts.IdWithReceipt> is(Receipt ack) {
@@ -154,11 +160,18 @@ public class EmbeddedDatabase implements Database {
 
     @Override
     public void tripCircuit(String subId, String eventType) {
+        System.out.println("Tripping"  + subId + " " + eventType);
         trippedCircuitsBySubId.computeIfAbsent(subId, s -> new ConcurrentSkipListSet<>()).add(eventType);
     }
 
     @Override
     public void resetCircuit(String subId, String eventType) {
+        System.out.println("reset for " + subId + " eventType" + eventType  );
         trippedCircuitsBySubId.computeIfAbsent(subId, s -> new ConcurrentSkipListSet<>()).remove(eventType);
+    }
+
+    @Override
+    public boolean takeLeader(UUID id) {
+        return true;
     }
 }

@@ -25,6 +25,7 @@ public class CircuitBreakEnabledReceiver implements Receiver {
                     receiver.receive(spsEvent);
                     trippedCircuit.recordAckForCurrentTier();
                 } catch (Exception e) {
+                    e.printStackTrace();
                     trippedCircuit.restart();
                     throw e;
                 }
@@ -50,7 +51,9 @@ public class CircuitBreakEnabledReceiver implements Receiver {
     }
 
     public boolean tripped() {
-        return trippedCircuit != null && !trippedCircuit.remainingResetCircuitTiers().isEmpty();
+        System.out.println(trippedCircuit);
+        System.out.println("tripped " + (trippedCircuit != null && trippedCircuit.hasRemainingEvents()));
+        return trippedCircuit != null && trippedCircuit.hasRemainingEvents();
     }
 
     public TrippedCircuit trippedCircuit() {

@@ -32,12 +32,15 @@ public class CircuitBreakerExecutor {
     }
 
     private void setIsAttemptingReset() {
+        System.out.println("setIsAttemptingReset");
+
         mapped.forEach((key, value) -> {
             if (value instanceof CircuitBreakEnabledReceiver receiver) {
-                if (!receiver.tripped()) {
+                if (!database.isTripped(receiver.subId(), receiver.eventType())) {
                     return;
                 }
-                if (receiver.trippedCircuit().isAttemptingReset()) {
+                System.out.println("setIsAttemptingReset" + receiver.eventType());
+                if (receiver.trippedCircuit().hasRemainingEvents() == false) {
                     database.resetCircuit(receiver.subId(), receiver.eventType());
                 }
                 else {
@@ -55,8 +58,10 @@ public class CircuitBreakerExecutor {
             if (value instanceof CircuitBreakEnabledReceiver receiver) {
                 long nackCount = database.nackCountByTypeSince(key, now
                         .minus(receiver.breaker().checkWindowInMs(), ChronoUnit.MILLIS));
+                System.out.println(receiver.breaker().type() + " nack count:" + nackCount);
                 if (nackCount > receiver.breaker().threshold()) {
                     receiver.trip();
+                    System.out.println("Tripped:" + receiver.eventType());
                     database.tripCircuit(receiver.subId(), receiver.eventType());
                 }
             }
