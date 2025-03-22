@@ -3,32 +3,21 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>sps-publish</artifactId>
+        <artifactId>sps-persistance</artifactId>
         <groupId>com.kildeen</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>sps-publish-core</artifactId>
-
+    <artifactId>sps-embedded-db</artifactId>
     <dependencies>
         <dependency>
             <groupId>com.kildeen</groupId>
             <artifactId>sps-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.kildeen</groupId>
-            <artifactId>sps-unit-test-bundle</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.kildeen</groupId>
-            <artifactId>sps-jackson-bundle</artifactId>
-        </dependency>
-
     </dependencies>
+
+
 
 </project>

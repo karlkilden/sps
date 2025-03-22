@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>dependency-bundle</artifactId>
+    <artifactId>sps-dependency-bundle</artifactId>
     <packaging>pom</packaging>
     <modules>
         <module>sps-unit-test-bundle</module>

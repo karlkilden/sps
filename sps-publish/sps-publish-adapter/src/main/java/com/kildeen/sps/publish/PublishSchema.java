@@ -14,15 +14,15 @@ import java.util.Map;
 import java.util.Set;
 
 public class PublishSchema {
-    private final PublishEvent publishEvent;
+    private final Publisher publisher;
     private final FetchSchema fetchSchema;
     private final Schemas clientSuppliedSchemas;
 
-    public PublishSchema(PublishEvent publishEvent,
+    public PublishSchema(Publisher publisher,
                          FetchSubscription fetchSubscription,
                          FetchSchema fetchSchema,
                          Schemas clientSuppliedSchemas) {
-        this.publishEvent = publishEvent;
+        this.publisher = publisher;
         this.fetchSchema = fetchSchema;
         this.clientSuppliedSchemas = clientSuppliedSchemas;
     }
@@ -102,6 +102,6 @@ public class PublishSchema {
                 return Map.of("json", JsonProvider.json().write(schema));
             }
         };
-        publishEvent.publish(subscriptions, List.of(event));
+        publisher.publish(subscriptions, List.of(event));
     }
 }

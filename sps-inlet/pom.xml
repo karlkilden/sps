@@ -12,18 +12,12 @@
     <artifactId>sps-inlet</artifactId>
 
     <modules>
-        <module>sps-inlet-bridge</module>
         <module>sps-inlet-core</module>
         <module>sps-inlet-adapter</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.kildeen</groupId>
-                <artifactId>sps-inlet-bridge</artifactId>
-                <version>1.0-SNAPSHOT</version>
-            </dependency>
             <dependency>
                 <groupId>com.kildeen</groupId>
                 <artifactId>sps-inlet-core</artifactId>
@@ -41,7 +35,7 @@
 
         <dependency>
             <groupId>com.kildeen</groupId>
-            <artifactId>lang</artifactId>
+            <artifactId>sps-lang</artifactId>
         </dependency>
     </dependencies>
 

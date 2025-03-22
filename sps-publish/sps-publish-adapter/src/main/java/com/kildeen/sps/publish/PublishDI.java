@@ -7,6 +7,7 @@ import com.kildeen.sps.SpsEventType;
 import com.kildeen.sps.SpsSubscriberType;
 import com.kildeen.sps.persistence.DataBaseProvider;
 import com.kildeen.sps.persistence.Database;
+import com.kildeen.sps.publish.Subscriptions.Subscription;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,12 +17,12 @@ import java.util.Set;
 
 public class PublishDI implements Publish {
 
-    private final PublishEvent publishEvent;
+    private final Publisher publisher;
     private final PublishSchema publishSchema;
     private final FetchSubscription fetchSubscription;
 
     private PublishDI(Builder builder) {
-        publishEvent = builder.publishEvent;
+        publisher = builder.publisher;
         publishSchema = builder.publishSchema;
         fetchSubscription = builder.fetchSubscription;
     }
@@ -40,18 +41,20 @@ public class PublishDI implements Publish {
             return PublishResult.SCHEMA_GEN_PUBLISH;
         }
 
-        publishEvent.publish(subscriptions, events);
+        publisher.publish(subscriptions, events);
         return PublishResult.PUBLISH;
     }
 
     private void generateSchema(Set<String> types, Collection<SpsEvent> events) {
         String url = fetchSubscription.fetchSchemaGenUrl();
-        Subscriptions.Subscription.Subscriber schemaGen =
-                new Subscriptions.Subscription.Subscriber(SpsSubscriberType.gen_schema.toString(), url);
+        Subscription.Subscriber schemaGen =
+                new Subscription.Subscriber(SpsSubscriberType.gen_schema.toString(), url);
 
         for (String type : types) {
             Subscriptions schemaGenWrapper =
-                    new Subscriptions(List.of(new Subscriptions.Subscription(schemaGen, SpsEventType.add_schema_01.toString(), Map.of())));
+                    new Subscriptions(List.of(new Subscription(schemaGen,
+                            SpsEventType.add_schema_01.toString(),
+                            Map.of())));
 
             publishSchema.publish(type, schemaGenWrapper, events);
         }
@@ -61,7 +64,7 @@ public class PublishDI implements Publish {
         private Database database;
         private List<Client> clients = new ArrayList<>();
         private Schemas schemas;
-        private PublishEvent publishEvent;
+        private Publisher publisher;
         private PublishSchema publishSchema;
         private FetchSubscription fetchSubscription;
         private RetryPolicies retryPolicies;
@@ -108,12 +111,11 @@ public class PublishDI implements Publish {
             if (retryPolicies == null) {
                 retryPolicies = new RetryPolicies(List.of(), RetryPolicies.DEFAULT_RETRY_POLICIES);
             }
-            Publisher publisher = new Publisher(new Sender(clients), new RetryQueue(), retryPolicies,
+            this.publisher = new Publisher(new Sender(clients), new RetryQueue(), retryPolicies,
                     new CircuitBreakerState(database));
             fetchSubscription = new FetchSubscription(new FetchSubscriptionsImpl(database));
             FetchSchema fetchSchema = new FetchSchema(new FetchSchemasImpl(DataBaseProvider.database()));
-            publishEvent = new PublishEvent(publisher);
-            publishSchema = new PublishSchema(publishEvent, fetchSubscription, fetchSchema, schemas);
+            publishSchema = new PublishSchema(publisher, fetchSubscription, fetchSchema, schemas);
             return new PublishDI(this);
 
         }

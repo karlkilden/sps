@@ -12,18 +12,12 @@
     <artifactId>sps-publish</artifactId>
 
     <modules>
-        <module>sps-publish-bridge</module>
         <module>sps-publish-core</module>
         <module>sps-publish-adapter</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.kildeen</groupId>
-                <artifactId>sps-publish-bridge</artifactId>
-                <version>1.0-SNAPSHOT</version>
-            </dependency>
             <dependency>
                 <groupId>com.kildeen</groupId>
                 <artifactId>sps-publish-core</artifactId>
@@ -41,7 +35,7 @@
 
         <dependency>
             <groupId>com.kildeen</groupId>
-            <artifactId>lang</artifactId>
+            <artifactId>sps-lang</artifactId>
         </dependency>
     </dependencies>
 

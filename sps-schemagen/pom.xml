@@ -12,7 +12,6 @@
     <artifactId>sps-schemagen</artifactId>
 
     <modules>
-        <module>sps-schemagen-bridge</module>
         <module>sps-schemagen-core</module>
         <module>sps-schemagen-adapter</module>
         <module>sps-schemagen-deployment</module>
@@ -23,11 +22,6 @@
             <dependency>
                 <groupId>com.kildeen</groupId>
                 <artifactId>sps-inlet-adapter</artifactId>
-                <version>1.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>com.kildeen</groupId>
-                <artifactId>sps-schemagen-bridge</artifactId>
                 <version>1.0-SNAPSHOT</version>
             </dependency>
             <dependency>
@@ -47,7 +41,7 @@
 
         <dependency>
             <groupId>com.kildeen</groupId>
-            <artifactId>lang</artifactId>
+            <artifactId>sps-lang</artifactId>
         </dependency>
     </dependencies>
 

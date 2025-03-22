@@ -28,7 +28,7 @@ public abstract class ExceptionUtils {
 
     public static RuntimeException rethrow(Throwable throwable) {
         //Attention: helper which allows to use a trick to throw
-        // a catched checked exception without a wrapping exception
+        // a caught checked exception without a wrapping exception
         return new ExceptionHelper<RuntimeException>().throwException(throwable);
     }
 

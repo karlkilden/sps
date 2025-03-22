@@ -1,5 +1,6 @@
 package com.kildeen.sps;
 
 public enum Receipt {
-    UNKNOWN, ACK, NACK, ABANDONED, ACK_FAILURE, NACK_FAILURE, BLOCKED
+    ABANDONED, ACK, ACK_FAILURE, BLOCKED, NACK, NACK_FAILURE, UNKNOWN
+
 }

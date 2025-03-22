@@ -85,7 +85,7 @@ public class InletDI implements Inlet {
             receiveEvent = new ReceiveEvent(mapped,
                     new AckOrNackEvent(new RetryQueue(), new AckOrNackEventsImpl(database)));
 
-            database.takeLeader();
+            database.takeLeader(null);
             return new InletDI(this);
 
         }

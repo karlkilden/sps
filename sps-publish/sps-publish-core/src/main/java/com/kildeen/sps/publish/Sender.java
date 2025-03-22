@@ -21,9 +21,7 @@ public class Sender {
             for (Client client : clients) {
                 if (client.supports().contains(deliveryType)) {
                     SpsEvents spsEvents = new SpsEvents(fork.subscription().eventType(), fork.forkedEvents());
-                    CompletableFuture<IdWithReceiptsResult> post =
-                            client.post(fork.subscription(), spsEvents);
-                    return post;
+                    return client.post(fork.subscription(), spsEvents);
                 }
             }
         }

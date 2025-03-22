@@ -24,7 +24,8 @@ import java.util.concurrent.TimeUnit;
 
 public class Publisher {
     static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    static final ScheduledExecutorService RETRY_QUEUE_SCHEDULED_EXECUTOR = Executors.newScheduledThreadPool(1);
+    static final ScheduledExecutorService RETRY_QUEUE_SCHEDULED_EXECUTOR =
+            Executors.newScheduledThreadPool(1);
     private static final ExecutorService RETRY_EXECUTOR = Executors.newFixedThreadPool(2);
     private final Sender sender;
     private final RetryQueue retryQueue;
@@ -155,7 +156,12 @@ public class Publisher {
         }, RETRY_EXECUTOR);
     }
 
-    record RetryEvent(Subscriptions.Subscription subscription, List<SpsEvent> forkedEvents,
-                      int retries, List<DeliveryType> deliveryTypes, Instant createdAt) implements PublishableEvent {
+    record RetryEvent(
+            Subscriptions.Subscription subscription,
+            List<SpsEvent> forkedEvents,
+            int retries,
+            List<DeliveryType> deliveryTypes,
+            Instant createdAt
+    ) implements PublishableEvent {
     }
 }

@@ -20,7 +20,7 @@ public sealed interface PublishableEvent permits EventFork.ForkedEvents.Fork, Pu
     List<DeliveryType> deliveryTypes();
 
     default String id() {
-        return forkedEvents().get(0).id();
+        return forkedEvents().getFirst().id();
     }
 
 }
