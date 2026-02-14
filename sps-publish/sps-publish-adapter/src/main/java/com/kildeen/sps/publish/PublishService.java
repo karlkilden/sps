@@ -115,6 +115,7 @@ public class PublishService implements Publish {
 
             if (clients.isEmpty()) {
                 clients.add(new HttpClient());
+                clients.add(new DatabaseClient(database));
             }
             if (schemas == null) {
                 schemas = new Schemas(List.of());

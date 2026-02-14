@@ -6,7 +6,7 @@ import com.kildeen.sps.SpsEvent;
 import com.kildeen.sps.publish.Subscriptions;
 
 import java.time.Instant;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -53,4 +53,34 @@ public interface Database {
     boolean isTripped(String subId, String eventId);
 
     boolean takeLeader(UUID id);
+
+    // Transport queue methods for database-based delivery fallback
+
+    /**
+     * Insert an event into the transport queue for database-based delivery.
+     */
+    default void insertTransportEvent(String eventId, String eventType, String subscriberId, String payload) {
+        // Default no-op for backwards compatibility
+    }
+
+    /**
+     * Poll pending events from the transport queue for a subscriber.
+     */
+    default List<TransportQueueEntry> pollTransportQueue(String subscriberId, int limit) {
+        return List.of();
+    }
+
+    /**
+     * Mark a transport queue entry as processed.
+     */
+    default void markTransportProcessed(String eventId, String subscriberId) {
+        // Default no-op
+    }
+
+    /**
+     * Delete processed entries older than the given instant.
+     */
+    default int cleanupTransportQueue(Instant olderThan) {
+        return 0;
+    }
 }

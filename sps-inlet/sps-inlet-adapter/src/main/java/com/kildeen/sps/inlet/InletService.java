@@ -17,13 +17,17 @@ import java.util.Map;
  *
  * <p>Note: Server-side circuit breakers have been removed. Clients should use
  * {@code ClientCircuitBreaker} for resilience when calling this service.
+ *
+ * <p>Supports both HTTP-based receiving and database polling for transport fallback.
  */
 public class InletService implements Inlet {
 
     private final ReceiveEvent receiveEvent;
+    private final TransportQueuePoller transportQueuePoller;
 
     private InletService(Builder builder) {
         receiveEvent = builder.receiveEvent;
+        transportQueuePoller = builder.transportQueuePoller;
     }
 
     public static Builder newBuilder() {
@@ -39,11 +43,29 @@ public class InletService implements Inlet {
         return new IdWithReceipts(result);
     }
 
+    /**
+     * Stops the transport queue poller if running.
+     */
+    public void stop() {
+        if (transportQueuePoller != null) {
+            transportQueuePoller.stop();
+        }
+    }
+
+    /**
+     * Returns the transport queue poller for monitoring.
+     */
+    public TransportQueuePoller getTransportQueuePoller() {
+        return transportQueuePoller;
+    }
+
     public static final class Builder {
         private Collection<Receiver> spsReceivers;
         private Database database;
         private ReceiveEvent receiveEvent;
+        private TransportQueuePoller transportQueuePoller;
         private String subId;
+        private boolean enableTransportPolling = false;
 
         private Builder() {
         }
@@ -63,6 +85,15 @@ public class InletService implements Inlet {
             return this;
         }
 
+        /**
+         * Enable or disable transport queue polling for database fallback.
+         * Default is enabled.
+         */
+        public Builder withTransportPolling(boolean enabled) {
+            this.enableTransportPolling = enabled;
+            return this;
+        }
+
         public InletService build() {
             validateConfiguration();
 
@@ -75,6 +106,12 @@ public class InletService implements Inlet {
             receiveEvent = new ReceiveEvent(mapped,
                     new AckOrNackEvent(new RetryQueue(), new AckOrNackEventsImpl(database)),
                     database);
+
+            // Create and start transport queue poller for database fallback
+            if (enableTransportPolling) {
+                transportQueuePoller = new TransportQueuePoller(database, subId, new ArrayList<>(spsReceivers));
+                transportQueuePoller.start();
+            }
 
             database.takeLeader(null);
             return new InletService(this);

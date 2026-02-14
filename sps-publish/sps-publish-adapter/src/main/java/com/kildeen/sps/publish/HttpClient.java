@@ -23,7 +23,11 @@ import static com.kildeen.sps.Receipt.ACK;
 import static com.kildeen.sps.Receipt.NACK;
 
 public class HttpClient implements Client {
-    private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(0, 2, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    private static final int QUEUE_CAPACITY = 1000;
+    private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            2, 10, 60, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(QUEUE_CAPACITY),
+            new ThreadPoolExecutor.CallerRunsPolicy());
 
     private static final java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
             .executor(executor)

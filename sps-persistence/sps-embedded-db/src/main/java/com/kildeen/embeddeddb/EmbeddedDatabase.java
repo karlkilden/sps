@@ -7,6 +7,7 @@ import com.kildeen.sps.Schemas;
 import com.kildeen.sps.SpsEvent;
 import com.kildeen.sps.persistence.Config;
 import com.kildeen.sps.persistence.Database;
+import com.kildeen.sps.persistence.TransportQueueEntry;
 import com.kildeen.sps.publish.Retry;
 import com.kildeen.sps.publish.Subscriptions;
 
@@ -42,6 +43,10 @@ public class EmbeddedDatabase implements Database {
     private final ConcurrentHashMap<String, Schemas.Schema> schemasByType = new ConcurrentHashMap<>();
     private final Map<Retry, AtomicInteger> retries = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<String>> trippedCircuitsBySubId = new ConcurrentHashMap<>();
+
+    // Transport queue for database-based delivery fallback
+    private final ConcurrentLinkedDeque<TransportQueueEntry> transportQueue = new ConcurrentLinkedDeque<>();
+    private final AtomicInteger transportQueueIdGenerator = new AtomicInteger(0);
 
     // Receipt storage with bounded size and O(1) indexed lookup
     private final ConcurrentLinkedDeque<IdWithReceipts.IdWithReceipt> receipts = new ConcurrentLinkedDeque<>();
@@ -200,6 +205,49 @@ public class EmbeddedDatabase implements Database {
         return true;
     }
 
+    // Transport queue methods
+
+    @Override
+    public void insertTransportEvent(String eventId, String eventType, String subscriberId, String payload) {
+        // Check for duplicate (event_id + subscriber_id)
+        boolean exists = transportQueue.stream()
+                .anyMatch(e -> e.eventId().equals(eventId) && e.subscriberId().equals(subscriberId));
+        if (!exists) {
+            transportQueue.add(new TransportQueueEntry(
+                    transportQueueIdGenerator.incrementAndGet(),
+                    eventId,
+                    eventType,
+                    subscriberId,
+                    payload,
+                    TransportQueueEntry.STATUS_PENDING,
+                    Instant.now()));
+        }
+    }
+
+    @Override
+    public List<TransportQueueEntry> pollTransportQueue(String subscriberId, int limit) {
+        return transportQueue.stream()
+                .filter(e -> e.subscriberId().equals(subscriberId))
+                .filter(e -> TransportQueueEntry.STATUS_PENDING.equals(e.status()))
+                .limit(limit)
+                .toList();
+    }
+
+    @Override
+    public void markTransportProcessed(String eventId, String subscriberId) {
+        // Remove and re-add with PROCESSED status
+        transportQueue.removeIf(e -> e.eventId().equals(eventId) && e.subscriberId().equals(subscriberId));
+    }
+
+    @Override
+    public int cleanupTransportQueue(Instant olderThan) {
+        int sizeBefore = transportQueue.size();
+        transportQueue.removeIf(e ->
+                TransportQueueEntry.STATUS_PROCESSED.equals(e.status()) &&
+                e.createdAt().isBefore(olderThan));
+        return sizeBefore - transportQueue.size();
+    }
+
     /**
      * O(1) indexed lookup by event ID.
      */
@@ -221,5 +269,6 @@ public class EmbeddedDatabase implements Database {
         receiptIndex.clear();
         retries.clear();
         trippedCircuitsBySubId.clear();
+        transportQueue.clear();
     }
 }

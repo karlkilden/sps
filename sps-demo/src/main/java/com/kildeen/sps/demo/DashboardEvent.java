@@ -12,7 +12,8 @@ public record DashboardEvent(
         String eventType,
         String timestamp,
         Map<String, Object> payload,
-        Status status
+        Status status,
+        String transportType
 ) {
     public enum Direction {
         PUBLISHED, RECEIVED
@@ -23,11 +24,20 @@ public record DashboardEvent(
     }
 
     public static DashboardEvent published(String eventId, String eventType, Map<String, Object> payload) {
-        return new DashboardEvent(Direction.PUBLISHED, eventId, eventType, Instant.now().toString(), payload, Status.SUCCESS);
+        return new DashboardEvent(Direction.PUBLISHED, eventId, eventType, Instant.now().toString(), payload, Status.SUCCESS, "HTTP");
+    }
+
+    public static DashboardEvent published(String eventId, String eventType, Map<String, Object> payload, String transportType) {
+        return new DashboardEvent(Direction.PUBLISHED, eventId, eventType, Instant.now().toString(), payload, Status.SUCCESS, transportType);
     }
 
     public static DashboardEvent received(String eventId, String eventType, Map<String, Object> payload, boolean success) {
         return new DashboardEvent(Direction.RECEIVED, eventId, eventType, Instant.now().toString(), payload,
-                success ? Status.SUCCESS : Status.FAILED);
+                success ? Status.SUCCESS : Status.FAILED, "HTTP");
+    }
+
+    public static DashboardEvent received(String eventId, String eventType, Map<String, Object> payload, boolean success, String transportType) {
+        return new DashboardEvent(Direction.RECEIVED, eventId, eventType, Instant.now().toString(), payload,
+                success ? Status.SUCCESS : Status.FAILED, transportType);
     }
 }

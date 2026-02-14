@@ -5,6 +5,7 @@ import com.kildeen.sps.Schemas;
 import com.kildeen.sps.SpsEvent;
 import com.kildeen.sps.persistence.Config;
 import com.kildeen.sps.persistence.Database;
+import com.kildeen.sps.persistence.TransportQueueEntry;
 import com.kildeen.sps.publish.Subscriptions;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -361,6 +362,70 @@ public class PostgresDatabase implements Database {
 
             return updated > 0;
         });
+    }
+
+    // Transport queue methods
+
+    @Override
+    public void insertTransportEvent(String eventId, String eventType, String subscriberId, String payload) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                        INSERT INTO sps_transport_queue (event_id, event_type, subscriber_id, payload, status)
+                        VALUES (:eventId, :eventType, :subscriberId, CAST(:payload AS jsonb), 'PENDING')
+                        ON CONFLICT (event_id, subscriber_id) DO NOTHING
+                        """)
+                        .bind("eventId", eventId)
+                        .bind("eventType", eventType)
+                        .bind("subscriberId", subscriberId)
+                        .bind("payload", payload)
+                        .execute());
+    }
+
+    @Override
+    public List<TransportQueueEntry> pollTransportQueue(String subscriberId, int limit) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                        SELECT id, event_id, event_type, subscriber_id, payload::text, status, created_at
+                        FROM sps_transport_queue
+                        WHERE subscriber_id = :subscriberId AND status = 'PENDING'
+                        ORDER BY created_at ASC
+                        LIMIT :limit
+                        """)
+                        .bind("subscriberId", subscriberId)
+                        .bind("limit", limit)
+                        .map((rs, ctx) -> new TransportQueueEntry(
+                                rs.getLong("id"),
+                                rs.getString("event_id"),
+                                rs.getString("event_type"),
+                                rs.getString("subscriber_id"),
+                                rs.getString("payload"),
+                                rs.getString("status"),
+                                rs.getTimestamp("created_at").toInstant()))
+                        .list());
+    }
+
+    @Override
+    public void markTransportProcessed(String eventId, String subscriberId) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                        UPDATE sps_transport_queue
+                        SET status = 'PROCESSED', processed_at = NOW()
+                        WHERE event_id = :eventId AND subscriber_id = :subscriberId
+                        """)
+                        .bind("eventId", eventId)
+                        .bind("subscriberId", subscriberId)
+                        .execute());
+    }
+
+    @Override
+    public int cleanupTransportQueue(Instant olderThan) {
+        return jdbi.withHandle(handle ->
+                handle.createUpdate("""
+                        DELETE FROM sps_transport_queue
+                        WHERE status = 'PROCESSED' AND processed_at < :olderThan
+                        """)
+                        .bind("olderThan", olderThan)
+                        .execute());
     }
 
     // JSON helper methods

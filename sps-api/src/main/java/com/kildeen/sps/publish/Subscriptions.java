@@ -39,7 +39,7 @@ public record Subscriptions(List<Subscription> subscriptions) {
             }
 
             public Subscriber(String subId, String url) {
-                this(subId, url, new PublishPolicy(List.of(DeliveryType.HTTP)));
+                this(subId, url, new PublishPolicy(List.of(DeliveryType.HTTP, DeliveryType.DATABASE)));
             }
 
             public String resolveUrl() {

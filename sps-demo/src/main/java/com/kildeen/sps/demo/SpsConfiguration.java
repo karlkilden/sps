@@ -102,6 +102,7 @@ public class SpsConfiguration {
                 .withDatabase(database)
                 .withSubId(subscriberId)
                 .withReceivers(receivers)
+                .withTransportPolling(true)  // Enable database transport fallback polling
                 .build();
     }
 }

@@ -79,38 +79,39 @@ public class RateLimiter {
 
     /**
      * Windowed counter that tracks requests within a sliding time window.
+     * Uses synchronized block to ensure atomic check-and-increment.
      */
     private static class WindowedCounter {
         private final long windowMs;
-        private final AtomicInteger count = new AtomicInteger(0);
-        private volatile Instant windowStart;
+        private int count = 0;
+        private Instant windowStart;
 
         WindowedCounter(long windowMs) {
             this.windowMs = windowMs;
             this.windowStart = Instant.now();
         }
 
-        boolean incrementIfAllowed(int max) {
+        synchronized boolean incrementIfAllowed(int max) {
             Instant now = Instant.now();
             Duration elapsed = Duration.between(windowStart, now);
 
             // Reset if window expired
             if (elapsed.toMillis() >= windowMs) {
-                synchronized (this) {
-                    if (Duration.between(windowStart, Instant.now()).toMillis() >= windowMs) {
-                        count.set(0);
-                        windowStart = now;
-                    }
-                }
+                count = 0;
+                windowStart = now;
             }
 
-            // Increment and check
-            int current = count.incrementAndGet();
-            return current <= max;
+            // Check before incrementing to prevent exceeding max
+            if (count >= max) {
+                return false;
+            }
+
+            count++;
+            return true;
         }
 
-        int getCount() {
-            return count.get();
+        synchronized int getCount() {
+            return count;
         }
     }
 
