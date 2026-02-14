@@ -1,7 +1,7 @@
 package com.kildeen.sps.schemagen;
 
 import com.kildeen.sps.Schemas;
-import com.kildeen.sps.persistence.DataBaseProvider;
+import com.kildeen.sps.persistence.DatabaseProvider;
 import com.kildeen.sps.persistence.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ public class AddSchemasImpl implements AddSchemas {
     private final Database database;
 
     public AddSchemasImpl() {
-        this.database = DataBaseProvider.database();
+        this.database = DatabaseProvider.database();
     }
 
     @Override

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>sps</artifactId>
+        <groupId>com.kildeen</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>sps-demo</artifactId>
+    <packaging>jar</packaging>
+    
+    <description>
+        Full end-to-end demo of SPS pub/sub system.
+        Includes publisher and subscriber services in a single deployable.
+    </description>
+
+    <dependencies>
+        <!-- SPS modules -->
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-publish-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-inlet-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-subscribe-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-standard-libs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Quarkus -->
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-quarkus-bundle</artifactId>
+        </dependency>
+        
+        <!-- JSON -->
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-jackson-bundle</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>quarkus-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

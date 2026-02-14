@@ -6,10 +6,10 @@ import com.kildeen.sps.JvmLocalPostImpl;
 import com.kildeen.sps.Schemas;
 import com.kildeen.sps.TestInit;
 import com.kildeen.sps.inlet.Inlet;
-import com.kildeen.sps.inlet.InletDI;
-import com.kildeen.sps.persistence.DataBaseProvider;
+import com.kildeen.sps.inlet.InletService;
+import com.kildeen.sps.persistence.DatabaseProvider;
 import com.kildeen.sps.publish.Publish;
-import com.kildeen.sps.publish.PublishDI;
+import com.kildeen.sps.publish.PublishService;
 import com.kildeen.sps.publish.SameJVMClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,10 +30,10 @@ public class SchemaGenTest {
 
     @BeforeAll
     static void setUp() {
-        inlet = InletDI
+        inlet = InletService
                 .newBuilder()
                 .withSubId("test")
-                .withDatabase(DataBaseProvider.configure(EmbeddedDatabase.get()))
+                .withDatabase(DatabaseProvider.configure(EmbeddedDatabase.get()))
                 .withReceivers(List.of(new AddSchemaReceiver(new AddSchema(new AddSchemasImpl()))))
                 .build();
 
@@ -41,8 +41,8 @@ public class SchemaGenTest {
                 .build();
     }
 
-    private static PublishDI.Builder baseBuilder() {
-        return PublishDI.newBuilder().withDatabase(DataBaseProvider.configure(EmbeddedDatabase.get()))
+    private static PublishService.Builder baseBuilder() {
+        return PublishService.newBuilder().withDatabase(DatabaseProvider.configure(EmbeddedDatabase.get()))
                 .withClient(new SameJVMClient(new JvmLocalPostImpl(List.of(inlet))));
     }
 

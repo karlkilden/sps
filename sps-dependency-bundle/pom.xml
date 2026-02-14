@@ -19,6 +19,7 @@
         <module>sps-javalin-bundle</module>
         <module>sps-server-bundle</module>
         <module>sps-adapter-bundle</module>
+        <module>sps-quarkus-bundle</module>
     </modules>
 
 </project>

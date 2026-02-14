@@ -2,10 +2,10 @@ package com.kildeen.sps.publish;
 
 import com.kildeen.sps.Schemas;
 
-class FetchSchema {
+public class FetchSchema {
     private final FetchSchemas fetchSchemas;
 
-    FetchSchema(FetchSchemas fetchSchemas) {
+    public FetchSchema(FetchSchemas fetchSchemas) {
         this.fetchSchemas = fetchSchemas;
     }
 

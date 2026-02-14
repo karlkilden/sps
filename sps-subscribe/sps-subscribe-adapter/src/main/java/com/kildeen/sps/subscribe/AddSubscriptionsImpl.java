@@ -1,6 +1,6 @@
 package com.kildeen.sps.subscribe;
 
-import com.kildeen.sps.persistence.DataBaseProvider;
+import com.kildeen.sps.persistence.DatabaseProvider;
 import com.kildeen.sps.persistence.Database;
 import com.kildeen.sps.publish.Subscriptions;
 
@@ -9,7 +9,7 @@ public class AddSubscriptionsImpl implements AddSubscriptions {
     private final Database database;
 
     public AddSubscriptionsImpl() {
-        this.database = DataBaseProvider.database();
+        this.database = DatabaseProvider.database();
     }
 
     @Override

@@ -1,0 +1,93 @@
+# SPS Demo - Docker Compose
+# 
+# Demonstrates full pub/sub flow:
+#   Publisher (port 8081) --> SPS --> Subscriber (port 8082)
+#
+# Usage:
+#   make up       # Start all services
+#   make logs     # Follow logs
+#   make demo     # Send test event
+#   make down     # Stop all
+
+services:
+  # PostgreSQL database for SPS persistence
+  sps-db:
+    image: postgres:16-alpine
+    container_name: sps-db
+    environment:
+      POSTGRES_USER: sps
+      POSTGRES_PASSWORD: sps
+      POSTGRES_DB: spsdb
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sps -d spsdb"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - sps-data:/var/lib/postgresql/data
+
+  # SPS Subscribe Service - manages subscriptions
+  sps-subscribe:
+    image: sps-demo:latest
+    container_name: sps-subscribe
+    depends_on:
+      sps-db:
+        condition: service_healthy
+    ports:
+      - "8083:8080"
+    environment:
+      QUARKUS_HTTP_PORT: 8080
+      SPS_SUBSCRIBER_ID: subscribe-service
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/demo/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Publisher Service - sends events
+  sps-publisher:
+    image: sps-demo:latest
+    container_name: sps-publisher
+    depends_on:
+      sps-subscribe:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+      - "5005:5005"  # debug port
+    environment:
+      QUARKUS_HTTP_PORT: 8080
+      SPS_SUBSCRIBER_ID: publisher-service
+      SPS_SUBSCRIBER_URL: http://sps-subscriber:8080
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/demo/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Subscriber Service - receives events
+  sps-subscriber:
+    image: sps-demo:latest
+    container_name: sps-subscriber
+    depends_on:
+      sps-subscribe:
+        condition: service_healthy
+    ports:
+      - "8082:8080"
+      - "5006:5005"  # debug port
+    environment:
+      QUARKUS_HTTP_PORT: 8080
+      SPS_SUBSCRIBER_ID: subscriber-service
+      SPS_EVENT_TYPES: demo_event_01,greeting_01,order_created_01
+      SPS_PUBLISHER_CALLBACK_URL: http://sps-publisher:8080/demo/event-received
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/demo/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  sps-data:

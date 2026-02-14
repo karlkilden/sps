@@ -22,23 +22,32 @@ public class RetryQueue {
                 new AtomicInteger(retry.retries.get())));
     }
 
+    /**
+     * Retrieves the next event ready for retry.
+     * Uses atomic poll() to avoid race conditions between peek and poll.
+     *
+     * @return the next event if ready, null otherwise
+     */
     public RetryAckOrNack next() {
-        RetryAckOrNack peek = queue.peek();
-        if (peek == null) {
+        // Atomic poll - no race condition with peek/poll pattern
+        RetryAckOrNack polled = queue.poll();
+        if (polled == null) {
             return null;
         }
-        Duration res = Duration.between(peek.instant(), Instant.now());
-        if (res.toSeconds() > 5L * peek.retries().get()) {
-            RetryAckOrNack poll = queue.poll();
-            if (peek == poll) {
-                return poll;
-            } else {
-                queue.add(poll);
-            }
+
+        Duration elapsed = Duration.between(polled.instant(), Instant.now());
+        long requiredWaitSeconds = 5L * Math.max(1, polled.retries().get());
+
+        if (elapsed.toSeconds() >= requiredWaitSeconds) {
+            // Event is ready for retry
+            return polled;
+        } else {
+            // Not ready yet - re-add to back of queue
+            queue.add(polled);
+            return null;
         }
-        return null;
     }
 
-    record RetryAckOrNack(String id, Receipt receipt, Instant instant, AtomicInteger retries) {
+    public record RetryAckOrNack(String id, Receipt receipt, Instant instant, AtomicInteger retries) {
     }
 }

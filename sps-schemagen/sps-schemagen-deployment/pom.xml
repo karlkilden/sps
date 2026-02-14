@@ -10,9 +10,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>sps-schemagen-deployment</artifactId>
+    <description>SPS Schemagen Service - Quarkus-based schema generation</description>
 
     <dependencies>
-
+        <!-- Internal -->
         <dependency>
             <groupId>com.kildeen</groupId>
             <artifactId>sps-schemagen-adapter</artifactId>
@@ -20,15 +21,67 @@
         </dependency>
         <dependency>
             <groupId>com.kildeen</groupId>
-            <artifactId>sps-server-bundle</artifactId>
+            <artifactId>sps-inlet-adapter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.kildeen</groupId>
-            <artifactId>sps-standard-libs</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <artifactId>sps-publish-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-embedded-db</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-json-jackson</artifactId>
         </dependency>
 
+        <!-- Quarkus -->
+        <dependency>
+            <groupId>com.kildeen</groupId>
+            <artifactId>sps-quarkus-bundle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.slf4j</groupId>
+            <artifactId>slf4j-jboss-logmanager</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>quarkus</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>${quarkus.platform.group-id}</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <version>${quarkus.platform.version}</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>build</goal>
+                                    <goal>generate-code</goal>
+                                    <goal>generate-code-tests</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

@@ -4,7 +4,7 @@ import com.kildeen.sps.IdWithReceipts;
 import com.kildeen.sps.IdWithReceiptsResult;
 import com.kildeen.sps.Receipt;
 import com.kildeen.sps.SpsEvent;
-import com.kildeen.sps.persistence.DataBaseProvider;
+import com.kildeen.sps.dlq.DeadLetterQueue;
 import com.kildeen.sps.persistence.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,34 +22,68 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Publisher {
+/**
+ * Publishes events to subscribers with retry support.
+ * Implements AutoCloseable for proper resource cleanup.
+ *
+ * <p>Note: Server-side circuit breakers have been removed. Clients should use
+ * {@code ClientCircuitBreaker} for resilience. Server-side rate limiting via
+ * {@code RateLimiter} is available for protecting the server.
+ */
+public class Publisher implements AutoCloseable {
     static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    static final ScheduledExecutorService RETRY_QUEUE_SCHEDULED_EXECUTOR =
-            Executors.newScheduledThreadPool(1);
-    private static final ExecutorService RETRY_EXECUTOR = Executors.newFixedThreadPool(2);
+
+    private final ScheduledExecutorService retryQueueScheduler;
+    private final ExecutorService retryExecutor;
     private final Sender sender;
     private final RetryQueue retryQueue;
     private final RetryPolicies retryPolicies;
     private final Database database;
-    private final CircuitBreakerState circuitBreakerState;
+    private final DeadLetterQueue deadLetterQueue;
+    private volatile boolean closed = false;
 
     public Publisher(Sender sender,
                      RetryQueue retryQueue,
                      RetryPolicies retryPolicies,
-                     CircuitBreakerState circuitBreakerState) {
+                     Database database) {
+        this(sender, retryQueue, retryPolicies, database, null);
+    }
+
+    public Publisher(Sender sender,
+                     RetryQueue retryQueue,
+                     RetryPolicies retryPolicies,
+                     Database database,
+                     DeadLetterQueue deadLetterQueue) {
         this.sender = sender;
         this.retryQueue = retryQueue;
         this.retryPolicies = retryPolicies;
-        this.circuitBreakerState = circuitBreakerState;
-        RETRY_QUEUE_SCHEDULED_EXECUTOR.scheduleAtFixedRate(this::retryFromQueue,
+        this.deadLetterQueue = deadLetterQueue;
+        this.database = database;
+
+        // Instance-scoped executors with proper thread naming
+        this.retryQueueScheduler = Executors.newScheduledThreadPool(1, r -> {
+            Thread t = new Thread(r, "publisher-retry-scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+        this.retryExecutor = Executors.newFixedThreadPool(2, r -> {
+            Thread t = new Thread(r, "publisher-retry-worker");
+            t.setDaemon(true);
+            return t;
+        });
+
+        retryQueueScheduler.scheduleAtFixedRate(this::retryFromQueue,
                 200,
                 2000,
                 TimeUnit.MILLISECONDS);
-        this.database = DataBaseProvider.database();
 
+        LOG.info("Publisher initialized with retry support");
     }
 
     private void retryFromQueue() {
+        if (closed) {
+            return;
+        }
         PublishableEvent event = retryQueue.next();
         if (event != null) {
             RetryPolicies.RetryPolicy retryPolicy = retryPolicies.forAttempt(event.retries(), event.deliveryTypes());
@@ -64,14 +98,9 @@ public class Publisher {
     }
 
     private void sendAsync(PublishableEvent fork) {
-
         try {
-            if (circuitBreakerState.isTripped(fork)) {
-                handleRetry(fork, new CompletionException(new IllegalStateException("Circuit tripped")));
-            } else {
-                CompletableFuture<IdWithReceiptsResult> response = sender.send(fork);
-                response.thenAccept(res -> handleResponse(res, fork));
-            }
+            CompletableFuture<IdWithReceiptsResult> response = sender.send(fork);
+            response.thenAccept(res -> handleResponse(res, fork));
         } catch (CompletionException e) {
             handleRetry(fork, e);
         }
@@ -114,6 +143,10 @@ public class Publisher {
     }
 
     private void retry(PublishableEvent event, RetryPolicies.RetryPolicy retryPolicy) {
+        if (closed) {
+            LOG.debug("Publisher closed, skipping retry for event {}", event.id());
+            return;
+        }
 
         if (retryPolicy == null) {
             return;
@@ -124,19 +157,18 @@ public class Publisher {
             saved = retryQueue.save(event, retryPolicy);
         }
 
-        if ((saved || retryPolicy.retention() == RetryPolicies.RetryPolicy.RetentionType.IN_MEMORY)
-                && retryPolicy.waitInMs() > 0) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(retryPolicy.waitInMs());
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        // Check for event abandonment
         if (retryPolicy.abandonEventAfterMs() > 0) {
             Duration aliveDuration = Duration.between(event.createdAt(), Instant.now());
-
             if (aliveDuration.toMillis() > retryPolicy.abandonEventAfterMs()) {
+                LOG.warn("Abandoning event {} after {} ms (retries: {})", event.id(), aliveDuration.toMillis(), event.retries());
+                // Route to Dead Letter Queue if configured
+                if (deadLetterQueue != null) {
+                    event.forkedEvents().forEach(e ->
+                            deadLetterQueue.send(e, "max_retries_exceeded", event.retries()));
+                }
                 event.forkedEvents().forEach(e -> database.ackOrNack(e, Receipt.ABANDONED));
+                return;
             }
         }
 
@@ -144,16 +176,55 @@ public class Publisher {
             event.subscription().refreshUrl();
         }
 
-        doRetry(event, retryPolicy.deliveryType());
+        // Non-blocking retry: schedule with delay instead of Thread.sleep()
+        long waitMs = retryPolicy.waitInMs();
+        if ((saved || retryPolicy.retention() == RetryPolicies.RetryPolicy.RetentionType.IN_MEMORY)
+                && waitMs > 0) {
+            // Schedule delayed retry - does not block the current thread
+            retryQueueScheduler.schedule(
+                    () -> doRetry(event, retryPolicy.deliveryType()),
+                    waitMs,
+                    TimeUnit.MILLISECONDS
+            );
+        } else {
+            // Immediate retry
+            doRetry(event, retryPolicy.deliveryType());
+        }
     }
 
     private void doRetry(PublishableEvent event, DeliveryType deliveryType) {
-
+        if (closed) {
+            return;
+        }
         CompletableFuture.runAsync(() -> {
             RetryEvent retryEvent = new RetryEvent(event.subscription(), event.forkedEvents(),
                     event.retries() + 1, deliveryTypes(deliveryType), event.createdAt());
             sendAsync(retryEvent);
-        }, RETRY_EXECUTOR);
+        }, retryExecutor);
+    }
+
+    @Override
+    public void close() {
+        closed = true;
+        LOG.info("Shutting down Publisher...");
+
+        retryQueueScheduler.shutdown();
+        retryExecutor.shutdown();
+
+        try {
+            if (!retryQueueScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                retryQueueScheduler.shutdownNow();
+            }
+            if (!retryExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                retryExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            retryQueueScheduler.shutdownNow();
+            retryExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
+        LOG.info("Publisher shutdown complete");
     }
 
     record RetryEvent(

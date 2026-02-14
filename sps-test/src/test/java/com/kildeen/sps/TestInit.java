@@ -1,7 +1,7 @@
 package com.kildeen.sps;
 
 import com.kildeen.sps.json.JsonProvider;
-import json.JacksonJson;
+import com.kildeen.sps.json.JacksonJson;
 import org.slf4j.simple.SimpleLogger;
 
 public class TestInit {

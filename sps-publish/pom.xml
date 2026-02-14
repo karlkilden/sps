@@ -21,12 +21,7 @@
             <dependency>
                 <groupId>com.kildeen</groupId>
                 <artifactId>sps-publish-core</artifactId>
-                <version>1.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>com.kildeen</groupId>
-                <artifactId>directory-db</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

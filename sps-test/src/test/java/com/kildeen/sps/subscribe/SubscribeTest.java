@@ -8,10 +8,10 @@ import com.kildeen.sps.SpsEventType;
 import com.kildeen.sps.SpsSubscriberType;
 import com.kildeen.sps.TestInit;
 import com.kildeen.sps.inlet.Inlet;
-import com.kildeen.sps.inlet.InletDI;
+import com.kildeen.sps.inlet.InletService;
 import com.kildeen.sps.inlet.Receiver;
-import com.kildeen.sps.persistence.DataBaseProvider;
-import com.kildeen.sps.publish.PublishDI;
+import com.kildeen.sps.persistence.DatabaseProvider;
+import com.kildeen.sps.publish.PublishService;
 import com.kildeen.sps.publish.RetryPolicies;
 import com.kildeen.sps.publish.SameJVMClient;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +25,7 @@ import static org.awaitility.Awaitility.await;
 public class SubscribeTest {
 
     static Inlet inlet;
-    static PublishDI publish;
+    static PublishService publish;
     private static SpsEvent receivedEvent;
 
     static {
@@ -34,8 +34,8 @@ public class SubscribeTest {
 
     @BeforeAll
     static void setUp() {
-        DataBaseProvider.configure(EmbeddedDatabase.get());
-        Subscribe subscribe = SubscribeDI.INSTANCE.inject();
+        DatabaseProvider.configure(EmbeddedDatabase.get());
+        Subscribe subscribe = SubscriptionService.INSTANCE.inject();
         SubscriptionReceiver receiver = new SubscriptionReceiver(subscribe);
         Receiver WantEvent = new Receiver() {
 
@@ -49,10 +49,10 @@ public class SubscribeTest {
                 return "test01";
             }
         };
-        inlet = InletDI
+        inlet = InletService
                 .newBuilder()
                 .withSubId("test")
-                .withDatabase(DataBaseProvider.database())
+                .withDatabase(DatabaseProvider.database())
                 .withReceivers(List.of(receiver, WantEvent))
                 .build();
 
@@ -68,8 +68,8 @@ public class SubscribeTest {
 
     }
 
-    static PublishDI.Builder baseBuilder() {
-        return PublishDI.newBuilder().withDatabase(DataBaseProvider.configure(EmbeddedDatabase.get()))
+    static PublishService.Builder baseBuilder() {
+        return PublishService.newBuilder().withDatabase(DatabaseProvider.configure(EmbeddedDatabase.get()))
                 .withClient(new SameJVMClient(new JvmLocalPostImpl(List.of(inlet))));
     }
 
@@ -82,7 +82,7 @@ public class SubscribeTest {
 
         publish.publish(List.of(addSubscriberSpsEvent));
         await().until(() ->
-                DataBaseProvider.database().isAck(addSubscriberSpsEvent.id(),
+                DatabaseProvider.database().isAck(addSubscriberSpsEvent.id(),
                         SpsSubscriberType.add_subscriber.toString()));
     }
 
@@ -95,7 +95,7 @@ public class SubscribeTest {
 
         publish.publish(List.of(addSubscriberSpsEvent));
         await().until(() ->
-                DataBaseProvider.database().isAck(addSubscriberSpsEvent.id(),
+                DatabaseProvider.database().isAck(addSubscriberSpsEvent.id(),
                         SpsSubscriberType.add_subscriber.toString()));
 
         publish.publish(List.of(new BasicSpsEvents.BasicSpsEvent("test01", "999",

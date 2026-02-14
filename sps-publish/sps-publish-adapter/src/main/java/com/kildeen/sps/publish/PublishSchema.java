@@ -5,6 +5,8 @@ import com.kildeen.sps.SpsEvent;
 import com.kildeen.sps.SpsEventType;
 import com.kildeen.sps.json.JsonProvider;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -13,13 +15,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Handles schema publishing and generation based on event data.
+ * Automatically generates schema documentation from event fields.
+ */
 public class PublishSchema {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PublishSchema.class);
+
     private final Publisher publisher;
     private final FetchSchema fetchSchema;
     private final Schemas clientSuppliedSchemas;
 
     public PublishSchema(Publisher publisher,
-                         FetchSubscription fetchSubscription,
                          FetchSchema fetchSchema,
                          Schemas clientSuppliedSchemas) {
         this.publisher = publisher;
@@ -27,16 +35,16 @@ public class PublishSchema {
         this.clientSuppliedSchemas = clientSuppliedSchemas;
     }
 
-
     public void publish(String type, Subscriptions subscriptions, Collection<SpsEvent> events) {
-
-        //TODO:log
+        LOG.debug("Publishing schema for event type: {}", type);
         Schemas.Schema stored = fetchSchema.fetch(type);
         Schemas.Schema suppliedSchema =
                 clientSuppliedSchemas.schemas().stream().filter(schema -> schema.eventType().equals(type)).findAny()
                         .orElse(null);
         if (suppliedSchema != null) {
             if (stored != null && stored.version() > suppliedSchema.version()) {
+                LOG.debug("Skipping schema publish for {}: stored version {} > supplied version {}",
+                        type, stored.version(), suppliedSchema.version());
                 return;
             }
             SpsEvent mostKeys = getSpsEventWithMostKeys(events);
@@ -49,20 +57,26 @@ public class PublishSchema {
                             fieldDocumentation,
                             suppliedSchema.tags(),
                             suppliedSchema.version());
+            LOG.info("Publishing client-supplied schema for type {} (version {})", type, schema.version());
             doPublish(schema, subscriptions);
         } else {
             SpsEvent mostKeys = getSpsEventWithMostKeys(events);
             if (stored != null && stored.fieldDocumentation().size() == mostKeys.data().size()) {
+                LOG.debug("Skipping auto-generated schema for {}: field count unchanged ({})",
+                        type, mostKeys.data().size());
                 return;
             }
             Map<String, String> fieldDocumentation = createFieldDocumentation(mostKeys,
                     stored == null ? Map.of() : stored.fieldDocumentation());
+            int newVersion = stored == null ? 1 : stored.version() + 1;
             Schemas.Schema schema =
                     new Schemas.Schema(type,
                             "N/A",
                             fieldDocumentation,
                             Set.of("default"),
-                            stored == null ? 1 : stored.version() + 1);
+                            newVersion);
+            LOG.info("Publishing auto-generated schema for type {} (version {}, {} fields)",
+                    type, newVersion, fieldDocumentation.size());
             doPublish(schema, subscriptions);
         }
     }

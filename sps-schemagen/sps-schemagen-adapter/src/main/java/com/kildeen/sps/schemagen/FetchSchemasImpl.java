@@ -1,7 +1,7 @@
 package com.kildeen.sps.schemagen;
 
 import com.kildeen.sps.Schemas;
-import com.kildeen.sps.persistence.DataBaseProvider;
+import com.kildeen.sps.persistence.DatabaseProvider;
 import com.kildeen.sps.persistence.Database;
 
 import java.util.Collections;
@@ -12,7 +12,7 @@ public class FetchSchemasImpl implements FetchSchemas {
     private final Database database;
 
     public FetchSchemasImpl() {
-        this.database = DataBaseProvider.database();
+        this.database = DatabaseProvider.database();
     }
 
 
